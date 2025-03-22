@@ -10,7 +10,7 @@ Projekty indywidualny - Implementacja gry wykorzystującej uczenie ze wzmocnieni
 # Struktura projektu
 
 - `src` - Katalog zawierający kody źródłowe gier, które wykorzystuję uczenie przez wzmocnienie. Katalogi zawarte w tym katalogu odnoszą się do poszczególnych gier.
-- `docs` - Katalog zawierający szczegółową dokumentacje i raporty dotyczące poszczególnych gier. Podobnie jak katalog `src` znajdują się w nim katalogi dotyczące poszczególnych gier.
+- `docs` - Katalog zawierający dokumentacje i raporty dotyczące poszczególnych gier. Podobnie jak katalog `src` znajdują się w nim katalogi dotyczące poszczególnych gier.
 
 # Dostępne gry
 - [ ] snake
