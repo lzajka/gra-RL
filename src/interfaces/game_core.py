@@ -1,14 +1,12 @@
 from abc import ABC, abstractmethod
-from game_config import IGameConfig
-from player_move import IPlayerMove
 
 class IGameCore(ABC):
     @abstractmethod
-    def restart(self, config : IGameConfig):
+    def restart(self, config):
         pass
 
     @abstractmethod
-    def make_move(self, move : IPlayerMove):
+    def make_move(self, move):
         pass
 
     @abstractmethod

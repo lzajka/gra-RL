@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
-from game_state import IGameState
 
 class IPlayer(ABC):
     @abstractmethod
-    def notify(self, state : IGameState):
+    def notify(self, state):
         pass
 
     @abstractmethod
