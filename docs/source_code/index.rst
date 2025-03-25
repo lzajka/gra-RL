@@ -47,9 +47,6 @@ Diagram klas
     interface PlayerMove {
     }
 
-    interface GameConfig {
-
-    }
 
 
     
@@ -58,8 +55,6 @@ Diagram klas
 Klasa `Player` jest interfejsem, i odnosi się ona do podejmującego decyzje gracza. Klasa `HumanPlayer` implementuje ten interfejs i jest odpowiedzialna za obsługę gry przez człowieka. Klasa `AgentPlayer` również implementuje ten interfejs i jest odpowiedzialna za obsługę gry przez agenta RL. 
 
 Klasa `GameCore` jest odpowiedzialna za logikę i wyświetlanie gry. Udostępnia ona metody do przeprowadzania ruchów, sprawdzania stanu gry, itp.
-
-Klasa `GameConfig` przechowuje konfigurację gry.
 
 Interfejsy `GameState` i `PlayerMove` są odpowiedzialne za przechowywanie stanu gry i ruchu gracza. Instancje klasy `GameCore` wykorzystują interfejs `GameState` do przechowywania aktualnego stanu gry, a instancje klasy `Player` wykorzystują interfejs `PlayerMove` do przekazywania podjętej decyzji do klasy `GameCore`. Za implementacje obu tych interfejsów odpowiadają poszczególne gry.
 
