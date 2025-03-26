@@ -1,7 +1,7 @@
 # gra-RL
 Projekty Indywidualny - Implementacja gry wykorzystującej uczenie ze wzmocnieniem.
 
-> [!NOTE] Gałąź master.
+> [!NOTE]
 > Gałąź `master` wykorzystuję jako stabilną gałąź. Najnowsze zmiany znajdują się na gałęzi `dev`.
 
 # Zakres pracy:
