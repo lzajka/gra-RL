@@ -4,11 +4,13 @@ Katalog `src` jest podzielony na moduły, które zawierają kod źródłowy dla 
 
 
 
-- `game_core.py` - plik zawierający klasę `GameCore`, która jest odpowiedzialna za logikę gry. Udostępnia ona metody do przeprowadzania ruchów, sprawdzania stanu gry, itp.
-- `player.py` - plik zawiera interfejs `Player`. Celem klas implementujących ten interfejs jest gra w grę.
-- `human_player.py` - plik zawierający klasę `HumanPlayer`, która jest odpowiedzialna za obsługę gry przez człowieka. Implementuję interfejs `Player`.
-- `agent_player.py` - plik zawierający klasę `AgentPlayer`, która jest odpowiedzialna za obsługę gry przez agenta RL. Implementuję interfejs `Player`.
-- `game_config.py` - plik zawierający konfigurację gry, jest on odpowiedzialny za ogólną konfiguracje. Konfiguracja podana przez agenta 
+- `src/general/igame_core.py` - plik zawierający interfejs `IGameCore`. Jest on odpowiedzialny za logikę gry, oraz obsługę `pygame`. Przechwytuje wydarzenia, a następnie razem z stanem `AGameState` przekazuje je do
+- `src/general/aplayer.py` - plik zawierający klasę abstrakcyjną `APlayer`. Jest ona odpowiedzialna za obsługę gracza, zarówno człowieka jak i agenta AI. Decyzje podejmowane są na podstawie przesłanego przez klasę implementującą `IGameCore` stanu gry opartego na `AGameState`.
+- `src/general/agame_state.py` - plik zawierający klasę abstrakcyjną `AGameState`. Jest ona odpowiedzialna za przechowywanie informacji na temat stanu gry, takich jak wynik, czy gra jest zakończona, oraz przechwyconych wydarzeń `pygame.event`.
+- `src/<gra>/human_player.py` - plik zawierający klasę `Player` implementującą `APlayer`. Jest odpowiedzialna za obsługę gry przez człowieka.
+- `src/<gra>/agents/<nazwa_agenta>.py` - plik zawierający klasę `Player` implementującą `APlayer`, Jest odpowiedzialna za obsługę gry przez agenta RL.
+- `src/<gra>/game_config.py` - plik zawierający konfigurację gry, jest on odpowiedzialny za ogólną konfiguracje. Konfiguracja podana przez agenta.
+- `src/<gra>/player_move.py` - plik zawierający klasę `PlayerMove`, która jest odpowiedzialna za przechowywanie wybranej przez gracza akcji.
 
 
 ============
@@ -19,31 +21,77 @@ Diagram klas
 
 .. uml::
 
-    class GameCore {
-    + make_move(PlayerMove move)
-    + restart(GameConfig config)
-    + quit()
+    abstract class AGameState {
+        + score: int
+        + is_game_over: bool
+        + events: List[pygame.event]
     }
 
-    interface Player {
-    + notify(GameState state)
-    + play(GameConfig config)
+    interface IGameCore {
+    + {abstract} AGameState make_move(PlayerMove move)
+    + {abstract} AGameState restart(GameConfig config)
+    + {abstract} quit()
     }
 
-    class HumanPlayer implements Player {
-    + notify(GameState state)
-    + play(GameConfig config)
+    abstract APlayer {
+    + int play(GameConfig config)
+    # {abstract} PlayerMove make_decision(AGameState state)
     }
 
-    class AgentPlayer implements Player {
-    + notify(GameState state)
-    + play(GameConfig config)
+    class HumanPlayer implements APlayer {
+    + int play(GameConfig config)
+    }
+
+    class AgentPlayer implements APlayer {
+    + int play(GameConfig config)
     }    
 
+    APlayer *-- IGameCore
+    AGameState --* IGameCore
 
-Klasa `Player` jest interfejsem, i odnosi się ona do podejmującego decyzje gracza. Klasa `HumanPlayer` implementuje ten interfejs i jest odpowiedzialna za obsługę gry przez człowieka. Klasa `AgentPlayer` również implementuje ten interfejs i jest odpowiedzialna za obsługę gry przez agenta RL. 
+============
+Diagram sekwencji dla gracza
+============
 
-Klasa `GameCore` jest odpowiedzialna za logikę i wyświetlanie gry. Udostępnia ona metody do przeprowadzania ruchów, sprawdzania stanu gry, itp.
+.. uml::
+
+    participant start
+
+
+    create participant Player
+    start -> Player
+    create participant GameCore
+    Player -> GameCore
+    start -> Player: play(GameConfig config)
+
+    
+    activate Player
+    
+
+    loop Ta pętla będzie wykonywana dopóki użytkownik nie zakończy gry
+        Player -> GameCore: restart(GameConfig config)
+        activate GameCore
+        return GameState
+
+        loop Ta pętla będzie wykonywana tak długo jak gracz nie przegra albo nie zakończy gry
+            Player -> Player: make_decision(GameState state) : PlayerMove move
+
+            Player -> GameCore: make_move(PlayerMove move)
+
+            activate GameCore
+            return GameState
+        end
+
+        
+    end
+    Player -> GameCore: quit()
+    activate GameCore
+    return
+
+    destroy GameCore
+    return 
+
+
 
 ============
 Gry
