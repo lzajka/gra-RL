@@ -22,36 +22,36 @@ Diagram klas
 .. uml::
 
     abstract class AGameState {
-        + score: int
-        + is_game_over: bool
-        + events: List[pygame.event]
+        + score : int
+        + is_game_over : bool
+        + events : List[pygame.event]
     }
 
     interface IGameCore {
-    + {abstract} AGameState make_move(PlayerMove move)
-    + {abstract} AGameState restart(GameConfig config)
+    + {abstract} make_move(PlayerMove move) : AGameState
+    + {abstract} restart(GameConfig config) : AGameState
     + {abstract} quit()
     }
 
     abstract APlayer {
-    + int play(GameConfig config)
-    # {abstract} PlayerMove make_decision(AGameState state)
+    + play(GameConfig config) : int
+    # {abstract} make_decision(AGameState state) : tuple[PlayerMove move, bool is_running] 
     }
 
     class HumanPlayer implements APlayer {
-    + int play(GameConfig config)
+    + play(GameConfig config) : int
     }
 
     class AgentPlayer implements APlayer {
-    + int play(GameConfig config)
+    + play(GameConfig config) : int
     }    
 
     APlayer *-- IGameCore
     AGameState --* IGameCore
 
-============
+============================
 Diagram sekwencji dla gracza
-============
+============================
 
 .. uml::
 
@@ -74,7 +74,7 @@ Diagram sekwencji dla gracza
         return GameState
 
         loop Ta pętla będzie wykonywana tak długo jak gracz nie przegra albo nie zakończy gry
-            Player -> Player: make_decision(GameState state) : PlayerMove move
+            Player -> Player: make_decision(GameState state) : tuple[PlayerMove move, bool is_running] 
 
             Player -> GameCore: make_move(PlayerMove move)
 
@@ -86,10 +86,10 @@ Diagram sekwencji dla gracza
     end
     Player -> GameCore: quit()
     activate GameCore
-    return
+    return 
 
     destroy GameCore
-    return 
+    return Najlepszy wynik : int
 
 
 
