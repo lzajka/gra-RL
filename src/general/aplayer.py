@@ -7,7 +7,7 @@ class APlayer(ABC):
     def __init__(self, game: IGameCore):
         self.game = game
 
-    def play(self, config) -> int:
+    def play(self, config = None) -> int:
         is_running = True
         state = None
         while is_running:
@@ -20,7 +20,6 @@ class APlayer(ABC):
         
         self.game.quit()
         return state.score
-
 
     @abstractmethod
     def make_decision(self, state : AGameState):
