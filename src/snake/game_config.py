@@ -10,6 +10,7 @@ class GameConfig:
     FRUIT_COLOR         = 'red'
     DEATH_REWARD        = -10
     FRUIT_REWARD        = 10
+    SURVIVAL_REWARD     = 0.1
     EDGES_KILL          = True
     CAPTION             = 'Snake'
     BOARD_SIZE          = 20

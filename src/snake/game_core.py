@@ -174,6 +174,9 @@ class GameCore(IGameCore):
 
             self.game_state.score += self.config.DEATH_REWARD
             self.game_state.is_game_over = True
+        else:
+            self.game_state.score += self.config.SURVIVAL_REWARD
+
 
 
 
