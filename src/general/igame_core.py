@@ -2,12 +2,27 @@ from abc import ABC, abstractmethod
 import pygame
 
 class IGameCore(ABC):
-    @abstractmethod
+    restart_count = 0
+    move_count = 0
+
     def restart(self, config):
-        pass
+        '''Metoda restartuję grę. Wykorzystuje podaną konfigurację. Zwraca stan gry'''
+        self.restart_count += 1
+        self.move_count = 0
+        return self.on_restart(config)
+        
 
     @abstractmethod
+    def on_restart(self, config):
+        pass
+    
     def make_move(self, move):
+        '''Metoda wykonuje ruch'''
+        self.move_count += 1
+        return self.on_make_move(move)
+
+    @abstractmethod
+    def on_make_move(self, move):
         pass
 
     @abstractmethod

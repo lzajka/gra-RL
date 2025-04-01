@@ -7,7 +7,7 @@ class APlayer(ABC):
     def __init__(self, game: IGameCore):
         self.game = game
 
-    def play(self, config = None) -> int:
+    def play(self, config = None):
         is_running = True
         state = None
         while is_running:
@@ -17,10 +17,13 @@ class APlayer(ABC):
             while is_running and not state.is_game_over:
                 state = self.game.make_move(player_move)
                 [player_move, is_running] = self.make_decision(state)
-        
+            
+            self.on_game_over(state)
         self.game.quit()
-        return state.score
 
     @abstractmethod
     def make_decision(self, state : AGameState):
+        pass
+
+    def on_game_over(self, state : AGameState):
         pass
