@@ -6,15 +6,14 @@ from .game_config import GameConfig
 from .game_state import GameState
 from .snake_dir import Direction as SnakeDir
 from random import randint
+import logging
 
 class GameCore(IGameCore):
     def __init__(self):
         pygame.init()
         self.fps_controller = pygame.time.Clock()
         self.window_mode = None
-
-        self.num_of_moves = 0
-        self.num_of_resets = 0
+        self.log = logging.getLogger(__name__)
 
     def __increase_speed(self):
         TICKRATE_INCREASE = self.config.TICKRATE_INCREASE
@@ -42,8 +41,6 @@ class GameCore(IGameCore):
         self.clock = pygame.time.Clock()
         self.screen.fill(color=config.BACKGROUND_COLOR)
         self.cell_size = config.WINDOW_DIMENSION / config.BOARD_SIZE
-        self.num_of_resets += 1
-        self.num_of_moves = 0
 
         pygame.display.set_caption(config.CAPTION)
         
@@ -67,7 +64,7 @@ class GameCore(IGameCore):
         width = self.cell_size
         leftpx = left * width
         toppx = top * width
-        print(f'rysuję kwadrat {left} ({leftpx}), {top} ({toppx}) o szerokości {width}, kolor: {color}')
+        #print(f'rysuję kwadrat {left} ({leftpx}), {top} ({toppx}) o szerokości {width}, kolor: {color}')
         pygame.draw.rect(self.screen,color, pygame.Rect(leftpx, toppx, width, width))
 
     def __draw_snake_head(self):
@@ -114,13 +111,13 @@ class GameCore(IGameCore):
         BOARD_SIZE = self.config.BOARD_SIZE
 
         if snake_pos in self.game_state.snake_tail_set:
-            print('śmierć - uroboros')
+            self.log.info('śmierć - zjadł siebie')
             return True
         elif not self.config.EDGES_KILL:
             raise NotImplementedError("Opcja EDGES_KILL=False nie jest jeszcze zaimplementowana")
         # Sprawdź czy snake uderzył w ścianę.
         elif snake_pos[0] < 0 or snake_pos[0] >= BOARD_SIZE or snake_pos[1] < 0 or snake_pos[1] >= BOARD_SIZE:
-            print('śmierć - ściana')
+            self.log.info('śmierć - uderzył w ścianę')
             return True
         else:
             return False
@@ -163,7 +160,6 @@ class GameCore(IGameCore):
         if self.__check_fruit():
             self.__increase_speed()
             self.game_state.score += self.config.FRUIT_REWARD
-            print('new score:', self.game_state.score)
             self.__spawn_fruit()
         else:
             self.__remove_last_segment()
