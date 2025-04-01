@@ -30,3 +30,6 @@ full_game_module_path = f'src.{game_name}.{game_submodule_path}'
 
 logger.debug(f'Importuje: {full_game_module_path}')
 game_module = importlib.import_module(full_game_module_path)
+
+player = game_module.Player()
+player.play()
