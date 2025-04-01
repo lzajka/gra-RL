@@ -31,7 +31,7 @@ class GameCore(IGameCore):
             self.window_mode = new_window_mode
             self.screen = pygame.display.set_mode(new_window_mode)
 
-    def restart(self, config : GameConfig):
+    def on_restart(self, config : GameConfig):
         '''Metoda restartuję grę. Wykorzystuje podaną konfigurację. Zwraca stan gry'''
         if config is None:
             config = GameConfig()
@@ -147,7 +147,7 @@ class GameCore(IGameCore):
         self.__draw_box(fruit_pos, self.config.FRUIT_COLOR)
         return True
     def __show_score(self):
-        self.display_text(tuple([0, 0]), f'Score: {self.game_state.score}', self.config.SCORE_FONT_SIZE, self.config.SCORE_FONT, self.config.SCORE_FONT_COLOR)
+        self.display_text(tuple([0, 0]), f'Wynik: {self.game_state.score}', self.config.SCORE_FONT_SIZE, self.config.SCORE_FONT, self.config.SCORE_FONT_COLOR)
 
     def __show_game_over(self):
         pass
@@ -176,8 +176,7 @@ class GameCore(IGameCore):
 
 
 
-    def make_move(self, move : SnakeDir):
-        self.num_of_moves += 1
+    def on_make_move(self, move : SnakeDir):
 
         self.game_state.direction = move
         self.__game_logic()
