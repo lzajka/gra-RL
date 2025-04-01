@@ -8,6 +8,6 @@ Projekty Indywidualny - Implementacja gry wykorzystującej uczenie ze wzmocnieni
 - [x] Zapoznanie się z tematyką RL (Snake)
 - Implementacja
   - [x]   własnej gry
-  - [ ]   oraz RL
+  - [x]   oraz RL
 - [ ] Porównanie wyników człowieka z zaimplementowanym algorytmem
 - [ ] Raport końcowy
