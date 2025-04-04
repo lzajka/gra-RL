@@ -1,8 +1,12 @@
 Kod źródłowy
 =========================
+
+.. warning::
+    Kod źródłowy jest wciąż w fazie rozwoju. Niektóre z opisanych poniżej elementów mogą nie być jeszcze zaimplementowane, mogą być w trakcie implementacji, albo mogły zostać zmienione.
+
 Katalog `src` jest podzielony na moduły, które zawierają kod źródłowy dla poszczególnych gier. W celu ujednolicenia struktury kodu, każdy moduł zawiera następujące pliki:
 
-
+    
 
 - `src/general/igame_core.py` - plik zawierający interfejs `IGameCore`. Jest on odpowiedzialny za logikę gry, oraz obsługę `pygame`. Przechwytuje wydarzenia, a następnie razem z stanem `AGameState` przekazuje je do
 - `src/general/aplayer.py` - plik zawierający klasę abstrakcyjną `APlayer`. Jest ona odpowiedzialna za obsługę gracza, zarówno człowieka jak i agenta AI. Decyzje podejmowane są na podstawie przesłanego przez klasę implementującą `IGameCore` stanu gry opartego na `AGameState`.
@@ -54,7 +58,6 @@ Diagram sekwencji dla gracza
 ============================
 
 .. uml::
-
     participant start
 
 
