@@ -6,10 +6,11 @@ from src.general.aplayer import APlayer
 from .snake_dir import Direction as SnakeDir
 from .game_state import GameState
 import pygame
+from argparse import ArgumentParser
 
 class Player(APlayer):
-    def __init__(self):
-        super().__init__(game_core.GameCore())
+    def __init__(self, args : ArgumentParser, config_overrides : dict = {}):
+        super().__init__(game_core.GameCore(), args, config_overrides)
 
     def make_decision(self, state):
         events = state.events
