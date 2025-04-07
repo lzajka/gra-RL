@@ -60,15 +60,21 @@ class Player(APlayer):
         '''Sprawdź czy wąż jest w niebezpieczeństwie'''
         [snake_x, snake_y] = state.snake_position
         neighbors = [(snake_x - 1, snake_y), (snake_x + 1, snake_y), (snake_x, snake_y - 1), (snake_x, snake_y + 1)]
-        danger = [0, 0, 0, 0]
+        move = [SnakeDir.LEFT, SnakeDir.RIGHT, SnakeDir.UP, SnakeDir.DOWN]
+        prev_move = state.direction
 
-        for i, (x, y) in enumerate(neighbors):
-            if (x < 0 or x >= self.cfg.BOARD_SIZE) or (y < 0 or y >= self.cfg.BOARD_SIZE):
-                danger[i] = 1
-            elif (x, y) in state.snake_tail_set:
-                danger[i] = 1
-            elif (x, y) == state.fruit_position:
-                danger[i] = 0
+        game : GameCore = self.game
+
+        danger = [
+            game.check_death(prev_move, move[0], neighbors[0]), # l
+            game.check_death(prev_move, move[1], neighbors[1]), # r
+            game.check_death(prev_move, move[2], neighbors[2]), # u
+            game.check_death(prev_move, move[3], neighbors[3]), # d
+        ]
+
+        for i in range(len(danger)):
+            if danger[i]:
+                 self.log.debug(f'Niebezpieczeństwo w kierunku: {move[i]}')
     
         return danger
 
