@@ -16,8 +16,8 @@ class Linear_QNet(nn.Module):
 
         if load_model_path is not None:
             self.__load(load_model_path)
-        elif save_model_path is not None:
-            self.save_model_path = save_model_path
+        
+        self.save_model_path = save_model_path
 
         
     def forward(self, x):
