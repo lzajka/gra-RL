@@ -27,7 +27,7 @@ class GameCore(IGameCore):
     def __change_window_mode(self, size):
         new_window_mode = [size, size]
 
-        if self.window_mode is not new_window_mode:
+        if self.window_mode != new_window_mode:
             self.window_mode = new_window_mode
             self.screen = pygame.display.set_mode(new_window_mode)
 
