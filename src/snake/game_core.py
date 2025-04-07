@@ -136,7 +136,7 @@ class GameCore(IGameCore):
         
     
 
-    def __check_fruit(self):
+    def check_fruit(self):
         '''Metoda sprawdza czy snake zjadł owoc. Jeśli tak, zwraca `True`. W przeciwnym wypadku zwraca `False`'''
         snake_pos = self.game_state.snake_position
         fruit_positions = self.game_state.fruit_position
