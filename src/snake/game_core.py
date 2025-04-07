@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import pygame
-from src.general.igame_core import IGameCore
+from src.general.agame_core import AGameCore
 from .game_config import GameConfig
 from .game_state import GameState
 from .snake_dir import Direction as SnakeDir

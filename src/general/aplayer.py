@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 class APlayer(ABC):
-    from src.general.igame_core import IGameCore
+    from src.general.agame_core import AGameCore
     from src.general.agame_state import AGameState
 
     def __init__(self, game: IGameCore):
