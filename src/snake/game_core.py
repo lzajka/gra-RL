@@ -8,7 +8,7 @@ from .snake_dir import Direction as SnakeDir
 from random import randint
 import logging
 
-class GameCore(IGameCore):
+class GameCore(AGameCore):
     def __init__(self):
         pygame.init()
         self.fps_controller = pygame.time.Clock()
@@ -51,24 +51,18 @@ class GameCore(IGameCore):
 
         self.__spawn_fruit()
         self.game_state.speed = self.config.TICKRATE_INITIAL
-        pygame.display.update()
+        self.render()
         self.fps_controller.tick(self.game_state.speed)
-
+        self.game_state.events = pygame.event.get()
+        self.game_first_move = True
         
         return self.game_state
     
-
-    def __draw_box(self, pos, color):
-        '''Metoda rysuje kwadrat o podanym kolorze na podanej pozycji'''
-        [left, top] = pos
-        width = self.cell_size
-        leftpx = left * width
-        toppx = top * width
-        #print(f'rysuję kwadrat {left} ({leftpx}), {top} ({toppx}) o szerokości {width}, kolor: {color}')
-        pygame.draw.rect(self.screen,color, pygame.Rect(leftpx, toppx, width, width))
+    def get_default_config(self):
+        return GameConfig()
 
     def __draw_snake_head(self):
-        self.__draw_box(self.game_state.snake_position, self.config.SNAKE_COLOR)
+        self.draw_box(self.game_state.snake_position, self.config.SNAKE_COLOR, self.cell_size)
     
     def __update_snake_position(self):
         '''Metoda aktualizuje pozycję snake'a'''
@@ -101,7 +95,7 @@ class GameCore(IGameCore):
 
         tail_pos = queue.get()
         set.remove(tail_pos)
-        self.__draw_box(tail_pos, self.config.BACKGROUND_COLOR)
+        self.draw_box(tail_pos, self.config.BACKGROUND_COLOR, self.cell_size)
 
 
     def check_death(self, prev_direction : SnakeDir, new_direction : SnakeDir, snake_pos : tuple[int, int], is_prediction = True):
@@ -156,45 +150,48 @@ class GameCore(IGameCore):
             fruit_pos = tuple([randint(0, self.config.BOARD_SIZE - 1), randint(0, self.config.BOARD_SIZE - 1)])
 
         self.game_state.fruit_position = fruit_pos
-        self.__draw_box(fruit_pos, self.config.FRUIT_COLOR)
+        self.draw_box(fruit_pos, self.config.FRUIT_COLOR, self.cell_size)
         return True
+    
     def __show_score(self):
-        self.display_text(tuple([0, 0]), f'Wynik: {self.game_state.score}', self.config.SCORE_FONT_SIZE, self.config.SCORE_FONT, self.config.SCORE_FONT_COLOR)
+        self.display_text(tuple([0, 0]), f'Wynik: {round(self.game_state.score,2)}', self.config.SCORE_FONT_SIZE, self.config.SCORE_FONT, self.config.SCORE_FONT_COLOR)
 
-    def __show_game_over(self):
-        pass
 
-    def __game_logic(self):
+    def __game_logic(self, prev_dir : SnakeDir, new_dir : SnakeDir):
         '''Metoda wykonuje logikę gry. Wykonuje powyższe metody w odpowiedniej kolejności'''
-        self.__update_snake_position()
+        
         self.__show_score()
 
-        if self.__check_fruit():
+        
+        self.__update_snake_position()
+
+        if self.check_fruit():
             self.__increase_speed()
             self.game_state.score += self.config.FRUIT_REWARD
             self.__spawn_fruit()
-        else:
+        elif len(self.game_state.snake_tail_set) > GameConfig.INITIAL_LENGTH: 
             self.__remove_last_segment()
-
         self.__draw_snake_head()
 
-        if self.__check_death():
-
+        if self.check_death(prev_dir, new_dir, self.game_state.snake_position, False):
             self.game_state.score += self.config.DEATH_REWARD
             self.game_state.is_game_over = True
         else:
             self.game_state.score += self.config.SURVIVAL_REWARD
-
+        
 
 
 
     def on_make_move(self, move : SnakeDir):
-
+        prev_dir = self.game_state.direction
+        if self.game_first_move:
+            self.game_first_move = False
+            prev_dir = move
         self.game_state.direction = move
-        self.__game_logic()
+        self.__game_logic(prev_dir, move)
 
     
-        pygame.display.update()
+        self.render()
         self.fps_controller.tick(self.game_state.speed)
         self.game_state.events = pygame.event.get()
 
