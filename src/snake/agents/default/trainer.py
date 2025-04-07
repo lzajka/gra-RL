@@ -18,6 +18,7 @@ class QTrainer:
         self.criterion = nn.MSELoss()
     
     def train_step(self, state_pp, action_pp, reward, next_state_pp, done):
+        if not self.model.training_enabled: return
         state_pp = torch.tensor(state_pp, dtype=torch.float)
         # lrud (danger), lrud (food)
         next_state_pp = torch.tensor(next_state_pp, dtype=torch.float)

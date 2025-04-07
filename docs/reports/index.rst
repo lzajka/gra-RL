@@ -1,5 +1,4 @@
 Raporty
 =======
-.. toctree::
+.. nbgallery::
     snake
-    :maxdepth: 2

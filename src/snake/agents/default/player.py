@@ -18,13 +18,14 @@ from logging import getLogger
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
 LR = 0.001
+from argparse import ArgumentParser
 class Player(APlayer):
 
     cfg = GameConfig()
 
 
 
-    def __init__(self):
+    def __init__(self, args : ArgumentParser, config_overrides : dict = {}):
         self.log = getLogger(__name__)
         GameConfig.TICKRATE_INITIAL = 1000
         GameConfig.TICKRATE_INCREASE = 0
@@ -33,16 +34,18 @@ class Player(APlayer):
         self.n_games = 0
         self.epsilon = 0
         self.gamma = 0.99
+        self.record = 0
         # Model + Trainer
-        self.model = Linear_QNet(8, 256, 4)
+        self.model = Linear_QNet(8, 256, 4, load_model_path=args.load_model, save_model_path=args.save_model)
+        
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
-        super().__init__(GameCore())
+        super().__init__(GameCore(), args, config_overrides)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
-    def train_long_memory(self, state, action, reward, next_state, done):
+    def train_long_memory(self):
         sample = None
         if len(self.memory) > BATCH_SIZE:
             sample = random.sample(self.memory, BATCH_SIZE)
@@ -60,15 +63,21 @@ class Player(APlayer):
         '''Sprawdź czy wąż jest w niebezpieczeństwie'''
         [snake_x, snake_y] = state.snake_position
         neighbors = [(snake_x - 1, snake_y), (snake_x + 1, snake_y), (snake_x, snake_y - 1), (snake_x, snake_y + 1)]
-        danger = [0, 0, 0, 0]
+        move = [SnakeDir.LEFT, SnakeDir.RIGHT, SnakeDir.UP, SnakeDir.DOWN]
+        prev_move = state.direction
 
-        for i, (x, y) in enumerate(neighbors):
-            if (x < 0 or x >= self.cfg.BOARD_SIZE) or (y < 0 or y >= self.cfg.BOARD_SIZE):
-                danger[i] = 1
-            elif (x, y) in state.snake_tail_set:
-                danger[i] = 1
-            elif (x, y) == state.fruit_position:
-                danger[i] = 0
+        game : GameCore = self.game
+
+        danger = [
+            game.check_death(prev_move, move[0], neighbors[0]), # l
+            game.check_death(prev_move, move[1], neighbors[1]), # r
+            game.check_death(prev_move, move[2], neighbors[2]), # u
+            game.check_death(prev_move, move[3], neighbors[3]), # d
+        ]
+
+        for i in range(len(danger)):
+            if danger[i]:
+                 self.log.debug(f'Niebezpieczeństwo w kierunku: {move[i]}')
     
         return danger
 
@@ -105,13 +114,9 @@ class Player(APlayer):
         return np.array(state_arr, dtype=np.int32)
 
     def make_decision(self, state):
-        pass
-
-
-
-    def make_decision2(self, state_pp):
         '''Metoda podejmuje decyzję na podstawie stanu gry.'''
-        self.epsilon = 80 - self.n_games
+        state_pp = self.state_to_arr(state)
+        self.epsilon = 80 - self.round_number
         directions = [SnakeDir.LEFT, SnakeDir.RIGHT, SnakeDir.UP, SnakeDir.DOWN]
 
         if random.randint(0, 200) < self.epsilon:
@@ -122,7 +127,10 @@ class Player(APlayer):
             move_arr = torch.argmax(prediction).item()
             mapping = [SnakeDir.LEFT, SnakeDir.RIGHT, SnakeDir.UP, SnakeDir.DOWN]
             move = mapping[move_arr]
-        return move
+
+        self.handle_events(state.events)
+        return [move, True]
+
     
     def handle_events(self, event):
         for event in event:
@@ -133,52 +141,28 @@ class Player(APlayer):
                 if event.key == pygame.K_ESCAPE:
                     self.game.quit()
 
-    # Jednak tutaj trzeba to override'ować
-    def play(self, config = None):
-        scores = []
-        mean_scores = []
-        current_score = 0
-        record = -10
-        is_running = True
-        while is_running:
-            state = self.game.restart(config)
-            old_score = state.score
-            state_old_pp = self.state_to_arr(state)
-            reward = 0
+    def on_decision_made(self, state, player_move):
+        pass
 
-            while not state.is_game_over and is_running:
-                # Wykonaj ruch
-                action = self.make_decision2(state_old_pp)
-                action_pp = self.action_to_arr(action)
+    def on_game_over(self, state):
+        if state.score > self.record:
+            self.record = state.score
+            self.log.info(f'Nowy rekord: {self.record}')
+            self.model.save()
+        
 
-                # Zapisz stan
-                state = self.game.make_move(action)
-                self.handle_events(state.events)
+    def on_move_made(self, old_state, new_state, player_move):
 
+        # Oblicz nagrodę
+        reward = new_state.score - old_state.score
+        self.log.debug(f'Akcja: {player_move}, nagroda: {reward}')
 
-                state_new_pp = self.state_to_arr(state)
+        state_old_pp = self.state_to_arr(old_state)
+        state_new_pp = self.state_to_arr(new_state)
+        action_pp = self.action_to_arr(player_move)
 
-                # Oblicz nagrodę
-                current_score = state.score
-                reward = current_score - old_score
+        # Zapisz do pamięci krótkiej
+        self.train_short_memory(state_old_pp, action_pp, reward, state_new_pp, new_state.is_game_over)
 
-                # Zapisz do pamięci krótkiej
-                self.train_short_memory(state_old_pp, action_pp, reward, state_new_pp, state.is_game_over)
-
-                # Pamiętaj
-                self.remember(state_old_pp, action_pp, reward, state_new_pp, state.is_game_over)
-
-                if state.is_game_over:
-                    # Jeśli gra się zakończyła, zapisz do pamięci długiej
-                    self.n_games += 1
-                    self.train_long_memory(state_old_pp, action_pp, reward, state_new_pp, state.is_game_over)
-
-                    if current_score > record:
-                        record = current_score
-                        self.model.save()
-
-                    self.log.info(f'Gra: {self.n_games}, wynik: {current_score}, rekord: {record}')
-
-                # Ustaw state_new jako state_old
-                old_score = current_score
-                state_old_pp = state_new_pp.copy()
+        # Pamiętaj
+        self.remember(state_old_pp, action_pp, reward, state_new_pp, new_state.is_game_over)
