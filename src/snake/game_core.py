@@ -104,23 +104,35 @@ class GameCore(IGameCore):
         self.__draw_box(tail_pos, self.config.BACKGROUND_COLOR)
 
 
-    def __check_death(self):
+    def check_death(self, prev_direction : SnakeDir, new_direction : SnakeDir, snake_pos : tuple[int, int], is_prediction = True):
         '''Metoda sprawdza czy snake zjadł siebie lub uderzył w ścianę (w przypadku w którym ściana jest śmiertelna). Jeśli tak, zwraca `True`, w przeciwnym wypadku zwraca `False`'''
-        # Sprawdź czy snake zjadł siebie.
-        snake_pos = tuple(self.game_state.snake_position)
-        BOARD_SIZE = self.config.BOARD_SIZE
-
-        if snake_pos in self.game_state.snake_tail_set:
-            self.log.info('śmierć - zjadł siebie')
-            return True
-        elif not self.config.EDGES_KILL:
+        if not self.config.EDGES_KILL:
             raise NotImplementedError("Opcja EDGES_KILL=False nie jest jeszcze zaimplementowana")
-        # Sprawdź czy snake uderzył w ścianę.
-        elif snake_pos[0] < 0 or snake_pos[0] >= BOARD_SIZE or snake_pos[1] < 0 or snake_pos[1] >= BOARD_SIZE:
-            self.log.info('śmierć - uderzył w ścianę')
-            return True
+        
+        # Sprawdź czy snake zjadł siebie.
+
+        BOARD_SIZE = self.config.BOARD_SIZE
+        ate_itself = snake_pos in self.game_state.snake_tail_set
+        hit_wall = snake_pos[0] < 0 or snake_pos[0] >= BOARD_SIZE or snake_pos[1] < 0 or snake_pos[1] >= BOARD_SIZE
+        
+        # Jeżeli nagle się cofnie to też się zje
+        ate_itself_by_going_back = prev_direction.opposite() == new_direction
+
+
+        death_msg = 'śmierć - nieznana przyczyna'
+
+        if ate_itself:
+            death_msg = 'śmierć - zjadł siebie'
+        elif hit_wall:
+            death_msg = 'śmierć - uderzył w ścianę'
+        elif ate_itself_by_going_back:
+            death_msg = 'śmierć - zjadł siebie przez cofnięcie'
         else:
             return False
+
+        if not is_prediction:
+            self.log.info(death_msg)
+        return True
         
     
 
