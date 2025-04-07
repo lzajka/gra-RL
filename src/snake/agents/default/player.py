@@ -18,13 +18,14 @@ from logging import getLogger
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
 LR = 0.001
+from argparse import ArgumentParser
 class Player(APlayer):
 
     cfg = GameConfig()
 
 
 
-    def __init__(self):
+    def __init__(self, args : ArgumentParser, config_overrides : dict = {}):
         self.log = getLogger(__name__)
         GameConfig.TICKRATE_INITIAL = 1000
         GameConfig.TICKRATE_INCREASE = 0
@@ -33,11 +34,13 @@ class Player(APlayer):
         self.n_games = 0
         self.epsilon = 0
         self.gamma = 0.99
+        self.record = 0
         # Model + Trainer
-        self.model = Linear_QNet(8, 256, 4)
+        self.model = Linear_QNet(8, 256, 4, load_model_path=args.load_model, save_model_path=args.save_model)
+        
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
-        super().__init__(GameCore())
+        super().__init__(GameCore(), args, config_overrides)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
