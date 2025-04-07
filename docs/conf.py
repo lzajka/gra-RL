@@ -14,7 +14,8 @@ author = 'Łukasz Czajka'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    'sphinxcontrib.plantuml'
+    'sphinxcontrib.plantuml',
+    'nbsphinx'
 ]
 
 templates_path = ['_templates']
