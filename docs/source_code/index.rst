@@ -1,20 +1,11 @@
 Kod źródłowy
 =========================
-
-.. warning::
-    Kod źródłowy jest wciąż w fazie rozwoju. Niektóre z opisanych poniżej elementów mogą nie być jeszcze zaimplementowane, mogą być w trakcie implementacji, albo mogły zostać zmienione.
-
-Katalog `src` jest podzielony na moduły, które zawierają kod źródłowy dla poszczególnych gier. W celu ujednolicenia struktury kodu, każdy moduł zawiera następujące pliki:
-
     
 
-- `src/general/igame_core.py` - plik zawierający interfejs `IGameCore`. Jest on odpowiedzialny za logikę gry, oraz obsługę `pygame`. Przechwytuje wydarzenia, a następnie razem z stanem `AGameState` przekazuje je do
-- `src/general/aplayer.py` - plik zawierający klasę abstrakcyjną `APlayer`. Jest ona odpowiedzialna za obsługę gracza, zarówno człowieka jak i agenta AI. Decyzje podejmowane są na podstawie przesłanego przez klasę implementującą `IGameCore` stanu gry opartego na `AGameState`.
-- `src/general/agame_state.py` - plik zawierający klasę abstrakcyjną `AGameState`. Jest ona odpowiedzialna za przechowywanie informacji na temat stanu gry, takich jak wynik, czy gra jest zakończona, oraz przechwyconych wydarzeń `pygame.event`.
-- `src/<gra>/human_player.py` - plik zawierający klasę `Player` implementującą `APlayer`. Jest odpowiedzialna za obsługę gry przez człowieka.
-- `src/<gra>/agents/<nazwa_agenta>.py` - plik zawierający klasę `Player` implementującą `APlayer`, Jest odpowiedzialna za obsługę gry przez agenta RL.
-- `src/<gra>/game_config.py` - plik zawierający konfigurację gry, jest on odpowiedzialny za ogólną konfiguracje. Konfiguracja podana przez agenta.
-- `src/<gra>/player_move.py` - plik zawierający klasę `PlayerMove`, która jest odpowiedzialna za przechowywanie wybranej przez gracza akcji.
+- `src/general/` - Katalog zawierające powszechnie używaną funkcjonalność w grach
+   -  `agame_core.py` - Klasa abstrakcyjna. Prosty silnik na podstawie Pygame.
+   -  `game_state.py` - Klasa abstrakcyjna. Przechowuje informacje o stanie gry.
+   -  `aplayer.py` - Klasa abstrakcyjna. Odpowiedzialna, za sterowanie.
 
 
 ============
@@ -25,33 +16,47 @@ Diagram klas
 
 .. uml::
 
+    abstract class AGameCore {
+        + restart(config) : AGameState
+        + make_move(move) : Tuple[AGameState, bool]
+        + quit() : None
+        + display_text(position : Tuple[int, int], text, font_size, font, color, background) : None
+        + clear_text(position : Tuple[int, int]) : None
+        + draw_box(pos : [int, int] , color, cell_size = None) : None
+        + show_score() : None
+        + render() : None
+        + {abstract} quit() : None
+        + {abstract} on_make_move(move) : None
+        + {abstract} on_restart(config) : None
+        + {abstract} get_default_config() : GameConfig
+        - __render_text(position : Tuple[int, int]) : None
+        - __render_texts() : None
+    }
+
     abstract class AGameState {
         + score : int
         + is_game_over : bool
-        + events : List[pygame.event]
+        + events : List[event.Event]
+        + {abstract} to_list() : List[str]
+        + {abstract} copy() : None
+        + {abstract} get_headers() : List[str]
+    }
+    abstract class APlayer {
+        + handle_config_overrides(default_config, overrides) : GameConfig
+        + play(config) : None
+        + {abstract} make_decision(state: AGameState) 
+        + write_stats(state: AGameState) : None
+        + quit() : None
+        + on_quit() : None
+        + on_game_over(state: AGameState) : None
+        + on_decision_made(state: AGameState, player_move) : None
+        + on_move_made(old_state : AGameState, new_state : AGameState, player_move) : None
     }
 
-    interface IGameCore {
-    + {abstract} make_move(PlayerMove move) : AGameState
-    + {abstract} restart(GameConfig config) : AGameState
-    + {abstract} quit()
-    }
-
-    abstract APlayer {
-    + play(GameConfig config) : int
-    # {abstract} make_decision(AGameState state) : tuple[PlayerMove move, bool is_running] 
-    }
-
-    class HumanPlayer implements APlayer {
-    + play(GameConfig config) : int
-    }
-
-    class AgentPlayer implements APlayer {
-    + play(GameConfig config) : int
-    }    
-
-    APlayer *-- IGameCore
-    AGameState --* IGameCore
+    APlayer --> AGameCore
+    APlayer --> AGameState
+    AGameCore -> AGameState
+    
 
 ============================
 Diagram sekwencji dla gracza
