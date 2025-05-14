@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 import pygame
-from . import agame_state
+from agame_state import AGameState
 from typing import Tuple
 
 
 class AGameCore(ABC):
 
-    def restart(self, config) -> agame_state.AGameState:
+    def restart(self, config) -> AGameState:
         '''Metoda restartuję grę. Wykorzystuje podaną konfigurację. Zwraca stan gry'''
         self.move_count = 0
 
@@ -26,7 +26,7 @@ class AGameCore(ABC):
     def on_restart(self, config):
         pass
     
-    def make_move(self, move) -> Tuple[agame_state.AGameState, bool]:
+    def make_move(self, move) -> Tuple[AGameState, bool]:
         '''Metoda wykonuje ruch'''
         return self.on_make_move(move)
 

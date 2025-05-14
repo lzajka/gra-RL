@@ -27,6 +27,10 @@ class APlayer(ABC):
         self.game_config = self.game.get_default_config()
         self.game_config = self.handle_config_overrides(self.game_config, config_overrides)
 
+    @abstractmethod
+    def __init__(self, args : ArgumentParser, config_overrides : dict = {}):
+        pass
+
     def handle_config_overrides(self, default_config, overrides : dict):
         """Funkcja do obsługi nadpisania konfiguracji. Funkcja ta jest wywoływana przed rozpoczęciem gry.
 
@@ -81,7 +85,6 @@ class APlayer(ABC):
             self.round_number += 1
             self.move_number = 0
         self.quit()
-
     @abstractmethod
     def make_decision(self, state : AGameState):
         pass
