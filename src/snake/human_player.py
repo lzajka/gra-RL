@@ -9,8 +9,8 @@ import pygame
 from argparse import ArgumentParser
 
 class Player(APlayer):
-    def __init__(self, args : ArgumentParser, config_overrides : dict = {}):
-        super().__init__(game_core.GameCore(), args, config_overrides)
+    def getGame(self):
+        return game_core.GameCore()
 
     def make_decision(self, state):
         events = state.events

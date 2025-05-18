@@ -40,7 +40,10 @@ class Player(APlayer):
         
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
-        super().__init__(GameCore(), args, config_overrides)
+        super().__init__(args, config_overrides)
+
+    def getGame(self):
+        return GameCore()
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))

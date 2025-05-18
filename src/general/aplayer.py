@@ -6,8 +6,16 @@ class APlayer(ABC):
     from src.general.agame_core import AGameCore
     from src.general.agame_state import AGameState
 
-    def __init__(self, game: AGameCore, args : ArgumentParser, config_overrides : dict = {}):
-        self.game = game
+    def __init__(self, args : ArgumentParser, config_overrides : dict = {}):
+        """Konstruktor klasy APlayer. Klasa ta jest klasą bazową dla wszystkich graczy. Klasa ta nie powinna być używana bezpośrednio.
+
+        :param args: Argumenty linii poleceń.
+        :type args: ArgumentParser
+        :param config_overrides: Mapa nadpisująca konfiguracje, wyrażona jako słownik. Kluczami są nazwy parametrów, a wartościami są nowe wartości parametrów. Jeżeli nie podano, używane są domyślne wartości.
+        :type config_overrides: dict, optional
+        :raises Exception: Błąd podczas otwierania pliku.
+        """
+        self.game = self.getGame()
         self.file = None
         self.csv = None
         self.round_number = 0
@@ -28,7 +36,12 @@ class APlayer(ABC):
         self.game_config = self.handle_config_overrides(self.game_config, config_overrides)
 
     @abstractmethod
-    def __init__(self, args : ArgumentParser, config_overrides : dict = {}):
+    def getGame(self) -> AGameCore:
+        """Funkcja tworząca instancję gry. Wywoływana podczas inicjalizacji gracza.
+
+        :return: Utworzona instancja gry.
+        :rtype: AGameCore
+        """
         pass
 
     def handle_config_overrides(self, default_config, overrides : dict):
