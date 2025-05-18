@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import pygame
-from agame_state import AGameState
+from .agame_state import AGameState
 from typing import Tuple
 
 
