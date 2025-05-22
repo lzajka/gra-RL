@@ -60,3 +60,12 @@ def test_down(dir_a: Direction, expected: Direction):
     ])
 def test_left(dir_a: Direction, expected: Direction):
     perform_tests(dir_a, Direction.LEFT, expected)
+
+# l r u d
+@pytest.mark.parametrize('dir,expected',[
+                         (Direction.LEFT,   [1,0,0,0]),
+                         (Direction.RIGHT,  [0,1,0,0]),
+                         (Direction.UP,     [0,0,1,0]),
+                         (Direction.DOWN,   [0,0,0,1])])
+def test_get_dummies(dir : Direction, expected):
+    assert dir.get_dummies() == expected, 'expected '
