@@ -60,6 +60,17 @@ class Direction(Enum):
             Direction.LEFT: 3
         }[self]
     
+    def get_dummies(self):
+        mapping = {
+            Direction.LEFT: 0,
+            Direction.RIGHT: 1,
+            Direction.UP: 2,
+            Direction.DOWN: 3
+        }
+        ret = [0]*4
+        ret[mapping[self]] = 1
+        return ret
+    
     
     
 def from_ordered_int(value: int) -> Direction:
