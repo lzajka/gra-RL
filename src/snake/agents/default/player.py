@@ -7,6 +7,7 @@ from src.snake.snake_dir import Direction
 from src.snake.game_state import GameState
 from .model import Linear_QNet
 from .trainer import QTrainer
+from src.snake.game_stats_display import GameStatsDisplay
 
 import pygame
 import torch
@@ -39,9 +40,12 @@ class Player(APlayer):
         self.model = Linear_QNet(8, 256, 4, load_model_path=args.load_model, save_model_path=args.save_model)
         
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
-
         super().__init__(args, config_overrides)
+        self.stat_display = self.get_stat_display()
 
+    def get_stat_display(self) -> GameStatsDisplay:
+        """Zwraca instancję GameStatsDisplay"""
+        return GameStatsDisplay()
 
     def getGame(self):
         return GameCore()
@@ -170,3 +174,6 @@ class Player(APlayer):
 
         # Pamiętaj
         self.remember(state_old_pp, action_pp, reward, state_new_pp, new_state.is_game_over)
+
+        # Wyświetl wynik
+        self.stat_display.update(new_state)
