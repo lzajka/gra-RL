@@ -3,10 +3,11 @@
 from src.snake.game_core import GameCore
 from src.snake.game_config import GameConfig
 from src.general.aplayer import APlayer
-from src.snake.snake_dir import Direction as SnakeDir
+from src.snake.snake_dir import Direction
 from src.snake.game_state import GameState
 from .model import Linear_QNet
 from .trainer import QTrainer
+from src.snake.game_stats_display import GameStatsDisplay
 
 import pygame
 import torch
@@ -39,8 +40,15 @@ class Player(APlayer):
         self.model = Linear_QNet(8, 256, 4, load_model_path=args.load_model, save_model_path=args.save_model)
         
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
+        super().__init__(args, config_overrides)
+        self.stat_display = self.get_stat_display()
 
-        super().__init__(GameCore(), args, config_overrides)
+    def get_stat_display(self) -> GameStatsDisplay:
+        """Zwraca instancję GameStatsDisplay"""
+        return GameStatsDisplay()
+
+    def getGame(self):
+        return GameCore()
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
@@ -63,7 +71,7 @@ class Player(APlayer):
         '''Sprawdź czy wąż jest w niebezpieczeństwie'''
         [snake_x, snake_y] = state.snake_position
         neighbors = [(snake_x - 1, snake_y), (snake_x + 1, snake_y), (snake_x, snake_y - 1), (snake_x, snake_y + 1)]
-        move = [SnakeDir.LEFT, SnakeDir.RIGHT, SnakeDir.UP, SnakeDir.DOWN]
+        move = [Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN]
         prev_move = state.direction
 
         game : GameCore = self.game
@@ -94,10 +102,10 @@ class Player(APlayer):
     def action_to_arr(self, action):
         '''Metoda przygotowuje akcję do przetworzenia przez sieć neuronową'''
         mapping = {
-            SnakeDir.LEFT: 0,
-            SnakeDir.RIGHT: 1,
-            SnakeDir.UP: 2,
-            SnakeDir.DOWN: 3
+            Direction.LEFT: 0,
+            Direction.RIGHT: 1,
+            Direction.UP: 2,
+            Direction.DOWN: 3
         }
 
         arr = [0, 0, 0, 0]
@@ -117,7 +125,7 @@ class Player(APlayer):
         '''Metoda podejmuje decyzję na podstawie stanu gry.'''
         state_pp = self.state_to_arr(state)
         self.epsilon = 80 - self.round_number
-        directions = [SnakeDir.LEFT, SnakeDir.RIGHT, SnakeDir.UP, SnakeDir.DOWN]
+        directions = [Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN]
 
         if random.randint(0, 200) < self.epsilon:
             move = random.choice(directions)
@@ -125,7 +133,7 @@ class Player(APlayer):
             state0 = torch.tensor(state_pp, dtype=torch.float)
             prediction = self.model.forward(state0)
             move_arr = torch.argmax(prediction).item()
-            mapping = [SnakeDir.LEFT, SnakeDir.RIGHT, SnakeDir.UP, SnakeDir.DOWN]
+            mapping = [Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN]
             move = mapping[move_arr]
 
         self.handle_events(state.events)
@@ -166,3 +174,6 @@ class Player(APlayer):
 
         # Pamiętaj
         self.remember(state_old_pp, action_pp, reward, state_new_pp, new_state.is_game_over)
+
+        # Wyświetl wynik
+        self.stat_display.update(new_state)
