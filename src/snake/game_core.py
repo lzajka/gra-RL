@@ -4,15 +4,21 @@ import pygame
 from src.general.agame_core import AGameCore
 from .game_config import GameConfig
 from .game_state import GameState
-from .snake_dir import Direction as SnakeDir
+from ..general.direction import Direction as SnakeDir
 from random import randint
 import logging
+
 
 class GameCore(AGameCore):
     def __init__(self):
         pygame.init()
+        self.config = GameConfig()
+        super().__init__(
+            window_dimensions=self.config.WINDOW_DIMENSIONS,
+            surface_order=['background','fruit','snake']
+            )
+
         self.fps_controller = pygame.time.Clock()
-        self.window_mode = None
         self.log = logging.getLogger(__name__)
 
     def __increase_speed(self):
@@ -24,23 +30,15 @@ class GameCore(AGameCore):
         new_speed = min(current_speed + TICKRATE_INCREASE, TICKRATE_MAX)
         self.game_state.speed = new_speed
 
-    def __change_window_mode(self, size):
-        new_window_mode = [size, size]
-
-        if self.window_mode != new_window_mode:
-            self.window_mode = new_window_mode
-            self.screen = pygame.display.set_mode(new_window_mode)
 
     def on_restart(self, config : GameConfig):
         '''Metoda restartuję grę. Wykorzystuje podaną konfigurację. Zwraca stan gry'''
         if config is None:
             config = GameConfig()
         self.config = config
-        self.__change_window_mode(config.WINDOW_DIMENSION)
-
+        self.surface_dict['background'].fill(color=config.BACKGROUND_COLOR)
         self.clock = pygame.time.Clock()
-        self.screen.fill(color=config.BACKGROUND_COLOR)
-        self.cell_size = config.WINDOW_DIMENSION / config.BOARD_SIZE
+        self.cell_size = config.CELL_SIZE
 
         pygame.display.set_caption(config.CAPTION)
         
@@ -62,7 +60,7 @@ class GameCore(AGameCore):
         return GameConfig()
 
     def __draw_snake_head(self):
-        self.draw_box(self.game_state.snake_position, self.config.SNAKE_COLOR, self.cell_size)
+        self.draw_box(self.game_state.snake_position, self.config.SNAKE_COLOR, self.cell_size, 'snake')
     
     def __update_snake_position(self):
         '''Metoda aktualizuje pozycję snake'a'''
@@ -95,7 +93,7 @@ class GameCore(AGameCore):
 
         tail_pos = queue.get()
         set.remove(tail_pos)
-        self.draw_box(tail_pos, self.config.BACKGROUND_COLOR, self.cell_size)
+        self.draw_box(tail_pos, self.config.BACKGROUND_COLOR, self.cell_size, 'snake')
 
 
     def check_death(self, prev_direction : SnakeDir, new_direction : SnakeDir, snake_pos : tuple[int, int], is_prediction = True):
@@ -150,7 +148,7 @@ class GameCore(AGameCore):
             fruit_pos = tuple([randint(0, self.config.BOARD_SIZE - 1), randint(0, self.config.BOARD_SIZE - 1)])
 
         self.game_state.fruit_position = fruit_pos
-        self.draw_box(fruit_pos, self.config.FRUIT_COLOR, self.cell_size)
+        self.draw_box(fruit_pos, self.config.FRUIT_COLOR, self.cell_size, 'fruit')
         return True
     
     def __show_score(self):
