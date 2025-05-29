@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from pygame.font import SysFont
 class GameConfig:
-    WINDOW_DIMENSION    = 1000
+    WINDOW_DIMENSIONS   = (1000, 1000)
+    CELL_SIZE           = 30
     TICKRATE_INITIAL    = 2
     TICKRATE_INCREASE   = 0.2
     TICKRATE_MAX        = 10
