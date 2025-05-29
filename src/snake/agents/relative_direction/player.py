@@ -4,7 +4,7 @@ from src.snake.agents.default.player import MAX_MEMORY, LR
 from src.snake.agents.default.trainer import QTrainer
 from src.snake.agents.default.model import Linear_QNet
 from src.snake.game_core import GameCore
-from src.snake.snake_dir import Direction
+from general.direction import Direction
 from src.snake.game_state import GameState
 import random
 import torch

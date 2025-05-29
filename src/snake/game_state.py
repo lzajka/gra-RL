@@ -1,5 +1,5 @@
 from src.general.agame_state import AGameState
-from .snake_dir import Direction as SnakeDir
+from ..general.direction import Direction as SnakeDir
 from queue import Queue
 from typing import Self
 

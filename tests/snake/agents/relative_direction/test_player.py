@@ -1,6 +1,6 @@
 import pytest
 from src.snake.agents.relative_direction.player import map_detection_array
-from src.snake.snake_dir import Direction
+from general.direction import Direction
 
 L = 1
 R = 2

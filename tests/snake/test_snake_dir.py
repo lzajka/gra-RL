@@ -1,4 +1,4 @@
-from src.snake.snake_dir import Direction
+from general.direction import Direction
 import pytest
 
 @pytest.mark.skip(reason="Not implemented yet")
