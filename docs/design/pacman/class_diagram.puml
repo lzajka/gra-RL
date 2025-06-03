@@ -1,0 +1,167 @@
+@startuml
+package "src.pacman.actors" as pactors {
+  class "Actor" as A
+}
+
+package "src.general" as pgeneral { 
+  abstract class "AGameCore" as AGC 
+  {
+  }
+
+  abstract class "Player" as P {
+    + {static} get_instance()
+    # draw(): void
+  }
+}
+
+
+
+
+package "src.pacman" as ppacman{
+  class "GameCore" as GC extends pgeneral.AGC {
+    - main_instance : GameCore
+    + get_main_instance(): GameCore
+    + get_game_state(): GameState
+    + next_frame_hooks: List[function(GameState prev, GameState next)]
+  }
+
+  class "GameState" as GS {
+    + game_over: bool
+    + score: int
+    + remaining_lives: int
+    + collected_points: int
+    + remaining_points: int
+    + to_training_array(): List[int]
+    + to_csv_line(): String
+    + get_csv_header(): String
+    + get_maze(): Maze
+  }
+
+  class "Player" extends pgeneral.P, pactors.A {
+    getTarget(): Tuple[int, int]
+  }
+
+  class "GameConfig" as GConf {
+  }
+
+  GC *- GS
+  GC -- Player
+  GC -- GConf  
+}
+
+
+
+package networkx {
+  class Graph {
+
+  }
+}
+
+package "src.pacman.maze" as pmaze {
+
+  abstract class "MazeObject" as MO {
+    + {abstract} to_csv_line(): List[String]
+    + {abstract} get_csv_header(): List[String]
+    + {abstract} is_walkable(): bool
+    - position: Tuple[int, int]
+    + get_position(): Tuple[int, int]
+    + set_position(pos: Tuple[int, int]): void
+    # {abstract} draw()
+    + destroy(): void
+    + on_player_collision(): void
+  }
+
+  class "Point" as P extends MO {
+    + is_walkable(): bool
+    + draw(): void
+    + on_player_collision(): void
+  }
+  class "Wall" as W extends MO {
+    + is_walkable(): bool
+    + draw(): void
+  }
+
+  class "PowerUp" as PU extends MO {
+    + is_walkable(): bool
+    + draw(): void
+    + on_collision(other: MazeObject): void
+    + on_player_collision(): void
+  }
+
+  class "Teleport" as T extends MO {
+    + is_walkable(): bool
+    + draw(): void
+    + on_player_collision(): void
+  }
+
+  class "Maze" as MA {
+    - size: Tuple[int, int]
+    - objects_at: Map[Tuple[int, int], List[MazeObject]]
+    + get_objects(pos : Tuple[int,int]): List[MazeObject]
+    + Maze(file_path: String): void
+    + get_size(): Tuple[int, int]  }
+    + to_csv_line(): String
+    + get_csv_header(): String
+      add_object(obj: MazeObject): void
+      remove_object(obj: MazeObject): void
+    + get_main_instance(): Maze
+  }
+  MA *-- MO
+}
+
+package "src.pacman.actors" as pactors {
+  enum GhostState {
+    CHASE,
+    SCATTER,
+    FRIGHTENED,
+    EATEN
+  }
+
+  abstract class "Actor" as A extends pmaze.MO {
+    # name: String
+    + spawn_point: Tuple[int, int]
+    + {abstract} {static} get_instance()
+    + {abstract} get_target(): Tuple[int, int]
+    + to_csv_line(): List[String]
+    + get_csv_header(): List[String]
+  }
+  abstract class "Ghost" as AG extends A {
+    - ghosts : List[Ghost]
+    + {static} notify_instances_powerup_activated(): void
+    + {static} notify_instances_powerup_deactivated(): void
+    # get_chase_position(): Tuple[int, int]
+    # get_scatter_position(): Tuple[int, int]
+    + get_target(): Tuple[int, int]
+    # on_powerup_activated(): void
+    # on_powerup_deactivated(): void
+    # draw(): void
+    + get_state(): GhostState
+    # set_state(state : GhostState): void
+    + on_player_collision(): void
+    
+  }
+  class "Inky" as AI extends AG {
+    - color: ColorValue
+    + {static} get_instance()
+  }
+  class "Blinky" as AB extends AG {
+    - color: ColorValue
+    + {static} get_instance()
+  }
+  class "Pinky" as APi extends AG {
+    - color: ColorValue
+    + {static} get_instance()
+  }
+  class "Clyde" as AC extends AG {
+    - color: ColorValue
+    + {static} get_instance()
+  }
+
+  GhostState - AG
+
+}
+
+ppacman.GS "1" *--- "1" pmaze.MA
+pmaze.MA ---> networkx.Graph
+
+@enduml

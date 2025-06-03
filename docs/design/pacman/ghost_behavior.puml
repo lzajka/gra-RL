@@ -1,0 +1,35 @@
+@startuml
+
+state Rozproszenie : Stan w którym celem ducha jest podążanie lub otaczanie określonej ściany.
+state Ściganie : Stan w którym duch podąża za pacmanem.
+state Ucieczka : W tym przypadku duchy spowalniają, odwracają bierzący kierunek i następnie wybierają losowy kierunek.
+state Spoczynek : W tym przypadku duch nie znajduje się na planszy.
+state Spawn : Duch się pojawia na planszy w określonym punkcie,\n natychmiast przechodzi do następnego stanu.
+state c1 <<choice>>
+state c2 <<choice>>
+state c3 <<choice>>
+state c4 <<choice>>
+state c5 <<choice>>
+state c6 <<choice>>
+
+[*] -> Spoczynek
+Spoczynek --> Spawn : [wymagania spawnu spełnione i spawn point ducha nie jest zajęty]
+Spawn --> Rozproszenie
+Rozproszenie --> c1
+c1 --> Ucieczka : [pacman aktywował w danej chwili powerup'a]
+Ucieczka --> c2
+
+c1 --> c3 : [pacman nie aktywował w danej chwili powerup'a]
+c3 --> Ściganie : [pacman jest w polu widzenia ducha]
+c3 --> Rozproszenie : [pacman nie jest w polu widzenia ducha]
+Ściganie --> c4
+c4 --> Ucieczka : [pacman aktywował w danej chwili powerup'a]
+c4 --> c5 : [pacman nie aktywował w danej chwili powerup'a]
+c5 --> Rozproszenie : [pacman nie jest w polu widzenia ducha]
+c5 --> Ściganie : [pacman jest w polu widzenia ducha]
+
+c2 --> Spoczynek : [Pacman zjadł ducha]
+c2 -> c6 : [Pacman nie zjadł ducha]
+c6 --> Rozproszenie : [czas działania powerup'a minął]
+c6 -> Ucieczka : [czas działania powerup'a nie minął]
+@enduml
