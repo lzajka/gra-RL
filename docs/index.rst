@@ -15,4 +15,5 @@ Dodatkowo zawiera raporty na temat wyników uzyskanych przez agentów w porówna
    :caption: Spis treści
 
    reports/index.rst
-   source_code/index.rst
+   design/index.rst
+   autoapi/index
