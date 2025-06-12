@@ -6,14 +6,11 @@ class AGameState(ABC):
     from typing import List
     from pygame import event
     
-    score : int = 0
-    is_game_over : bool = False
-    events : List[event.Event] = []
 
     def __init__(self):
-        score = 0
-        is_game_over = False
-        events = []
+        self.score = 0
+        self.is_game_over = False
+        self.events = []
 
     @abstractmethod
     def copy(self) -> Self:

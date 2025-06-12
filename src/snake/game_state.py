@@ -1,25 +1,19 @@
 from src.general.agame_state import AGameState
-from ..general.direction import Direction as SnakeDir
+from src.general.direction import Direction as SnakeDir
 from queue import Queue
 from typing import Self
 
 class GameState(AGameState):
-    score = 0 # używany również jako długość ogona
-    is_game_over = False
-    events = []
-    snake_position = tuple([0, 0])
-    snake_tail_queue = Queue()
-    snake_tail_set = set() 
-    fruit_position = None
-    speed = 0
-    direction = SnakeDir.RIGHT
-
     def __init__(self, snake_position):
         self.snake_position = snake_position
         self.snake_tail_queue = Queue()
         self.snake_tail_set = set()
         self.fruit_position = None
         self.direction = SnakeDir.RIGHT
+        self.speed = 0
+        self.score = 0
+        self.events = []
+        self.is_game_over = False
 
     def copy(self) -> Self:
         copy_state = GameState(self.snake_position)

@@ -1,0 +1,40 @@
+from pygame.font import SysFont
+class GameConfig:
+    WINDOW_DIMENSION    = (1000,1000)
+    TICKRATE_INITIAL    = 2
+    TICKRATE_INCREASE   = 0.2
+    TICKRATE_MAX        = 10
+    MAZE_FILE           = "src/pacman/maze/mazes/1.txt"
+    STARTING_LIVES      = 3
+
+    DEATH_REWARD        = -10
+    FRUIT_REWARD        = 10
+    SURVIVAL_REWARD     = 0
+    EDGES_KILL          = True
+    CAPTION             = 'Pacman'
+
+
+    SCORE_FONT_SIZE     = 36
+    SCORE_FONT_COLOR    = 'white'
+    SCORE_FONT          = None
+
+    GAMEOVER_FONT_SIZE  = 72
+    GAMEOVER_FONT_COLOR = 'red'
+
+    WALL_COLOR          = 'blue'
+    WALL_FILLED_RATIO   = 1
+    PACMAN_COLOR        = 'yellow'
+    ACTOR_FILLED_RATIO  = 0.8
+    INKY_COLOR          = 'pink'
+    PINKY_COLOR         = 'orange'
+    BLINKY_COLOR        = 'red'
+    CLYDE_COLOR         = 'cyan'
+    FRIGHT_COLOR        = 'purple'
+    GHOST_SPAWNER_COLOR = 'grey'
+    GHOST_SPAWNER_FILLED_RATIO = 1
+    POINT_COLOR         = 'white'
+    POINT_FILLED_RATIO  = 0.2
+    FRUIT_COLOR         = 'green'
+    FRUIT_FILLED_RATIO  = 0.5
+    WARP_COLOR          = 'lightblue'
+    WARP_FILLED_RATIO   = 1

@@ -1,0 +1,32 @@
+@startuml Spawn aktora
+participant "GameCore" as g
+participant "Actor" as a
+participant "SpawnManager" as s
+participant "Maze" as m
+
+activate g
+activate a
+activate m
+a -> s : request_spawn(actor : Actor)
+activate s
+s -> g : register_frame_hook(hook : Callable)
+s -> s : _try_spawn(actor : Actor)
+activate s
+s -> s : _get_spawn_point(actor : Actor)
+s -> m : get_object_at(spawn_point_pos : Tuple[int, int])
+opt Może zespawnować
+    s -> g : unregister_frame_hook(hook : Callable)
+    s -> a : set_position(spawn_point_pos : Tuple[int, int])
+    s -> a : on_spawn()
+end opt
+return
+return
+
+g -> g : _run_hooks()
+activate g
+g -> g : supplied_hook(prev : AGameState, current : AGameState)
+activate g
+g -> s : _try_spawn(actor : Actor)
+return
+return
+@enduml

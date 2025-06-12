@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 
 import pygame
-from src.general.agame_core import AGameCore
+from src.general import AGameCore, Direction as SnakeDir
 from .game_config import GameConfig
 from .game_state import GameState
-from ..general.direction import Direction as SnakeDir
 from random import randint
 import logging
 

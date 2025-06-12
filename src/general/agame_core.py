@@ -6,6 +6,7 @@ from pygame.surface import Surface
 from logging import getLogger
 from typing import List, Dict, Tuple
 from .text_info import TextInfo
+
 class AGameCore(ABC):
 
     def __init__(self, window_dimensions : Tuple[int, int] , surface_order = []):
@@ -25,9 +26,14 @@ class AGameCore(ABC):
         self.surface_order = surface_order + ['text']
 
         # Zmienne potrzebne do wyświetlania tekstu
-        self.text : Dict[Tuple[int,int], TextInfo] = dict()      
+        self.text : Dict[Tuple[int,int], TextInfo] = dict()
         
     # Warstwy
+
+    def _set_cell_size(self, cell_size : int):
+        """Metoda ustawia rozmiar komórki w pikselach.
+        """
+
 
     def __make_surfaces(self):
         """Metoda tworzy powierzchnie (`Surface`) na podstawie `surface_order` podanego podczas inicjalizacji.
@@ -114,10 +120,13 @@ class AGameCore(ABC):
             text_info = self.text[pos]
             img = text_info.font.render(text_info.text_value, True, text_info.foreground_color, None)
             text_surface.blit(img, pos)
-
     
+    def _get_cell_size(self) -> int:
+        """Metoda zwraca rozmiar komórki planszy w pikselach"""
+        pass 
 
-    def draw_box(self, pos : Tuple[int, int], color, cell_size : int, id : str = 'root'):
+
+    def draw_box(self, pos : Tuple[int, int], color, cell_size : int = None, id : str = 'root', filled_ratio : float = 1):
         """Metoda rysuje kwadrat na podanej pozycji
 
         :param pos: Pozycja
@@ -126,16 +135,23 @@ class AGameCore(ABC):
         :type color: ColorValue
         :param cell_size: Bok kwadratu w px
         :type cell_size: int
-        :param layer: Nazwa warstwy na której kwadrat ma zostać namalowany. Domyślnie 'root'
-        :type layer: str
+        :param id: Nazwa warstwy na której kwadrat ma zostać namalowany. Domyślnie 'root'
+        :type id: str
+        :param filled_ratio: Stosunek wypełnienia kwadratu. Domyślnie 1 (pełne wypełnienie)
+        :type filled_ratio: float
         """
         [left, top] = pos
-        width = cell_size
-        leftpx = left * width
-        toppx = top * width
+        size = cell_size
+
+
+        filled_size = size * filled_ratio
+
+        offset = (size - filled_size) // 2
+
+        leftpx = left * size + offset
+        toppx = top * size + offset
         surface = self.surface_dict[id]
-        pygame.draw.rect(surface, color, pygame.Rect(leftpx, toppx, width, width))
-    
+        pygame.draw.rect(surface, color, pygame.Rect(leftpx, toppx, filled_size, filled_size))
 
 
     def show_score(self):
@@ -152,7 +168,16 @@ class AGameCore(ABC):
         
         # Zaktualizuj ekran
         pygame.display.update()
+    def fill_layer(self, layer_name : str, color : tuple[int, int, int]):
+        """Metoda wypełnia warstwę kolorem.
+
+        :param layer_name: Nazwa warstwy
+        :type layer_name: str
+        :param color: Kolor wypełnienia
+        :type color: tuple[int, int, int]
+        """
         
+        self.surface_dict[layer_name].fill(color)
     # Pozostałe
 
     @abstractmethod

@@ -1,0 +1,6 @@
+runda,ruch,wynik,pozycja_x,pozycja_y,owoc_x,owoc_y,kierunek,czy_koniec,predkosc
+0,0,0,15,15,0,8,RIGHT,False,2
+0,0,0,16,15,0,8,RIGHT,False,2
+0,1,0,17,15,0,8,RIGHT,False,2
+0,2,0,18,15,0,8,RIGHT,False,2
+0,3,0,19,15,0,8,RIGHT,False,2

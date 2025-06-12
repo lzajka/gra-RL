@@ -8,9 +8,9 @@ package "src.general" as pgeneral {
   {
   }
 
-  abstract class "Player" as P {
-    + {static} get_instance()
-    # draw(): void
+  abstract class "APlayer" as P {
+    + {abstract} getGame(): GameCore
+    + {abstract} make_decision(self, state)
   }
 }
 
@@ -37,25 +37,20 @@ package "src.pacman" as ppacman{
     + get_maze(): Maze
   }
 
-  class "Player" extends pgeneral.P, pactors.A {
-    getTarget(): Tuple[int, int]
+  class "Player" extends pgeneral.P {
+    + getGame(): GameCore
+    + make_decision(self, state)
   }
 
   class "GameConfig" as GConf {
+    + get_main_instance(): GameConfig
   }
 
   GC *- GS
-  GC -- Player
-  GC -- GConf  
+  GC <-- Player : "Gra w"
+  GC --> GConf : "Pobiera konfigurację z"  
 }
 
-
-
-package networkx {
-  class Graph {
-
-  }
-}
 
 package "src.pacman.maze" as pmaze {
 
@@ -114,7 +109,7 @@ package "src.pacman.actors" as pactors {
     CHASE,
     SCATTER,
     FRIGHTENED,
-    EATEN
+    NOT_SPAWNED
   }
 
   abstract class "Actor" as A extends pmaze.MO {
@@ -124,13 +119,22 @@ package "src.pacman.actors" as pactors {
     + {abstract} get_target(): Tuple[int, int]
     + to_csv_line(): List[String]
     + get_csv_header(): List[String]
+    # on_game_update(prev : GameState, current : gameState): void
   }
+
+  class "Pacman" as AP extends A {
+    + static {get_instance()} : Pacman
+    + get_target(): Tuple[int, int]
+  }
+
   abstract class "Ghost" as AG extends A {
-    - ghosts : List[Ghost]
     + {static} notify_instances_powerup_activated(): void
     + {static} notify_instances_powerup_deactivated(): void
-    # get_chase_position(): Tuple[int, int]
-    # get_scatter_position(): Tuple[int, int]
+    - direction: Direction
+    # {abstract} get_color(): str
+    # {abstract} get_chase_position(): Tuple[int, int]
+    # {abstract} get_scatter_position(): Tuple[int, int]
+    - ghosts : List[Ghost]
     + get_target(): Tuple[int, int]
     # on_powerup_activated(): void
     # on_powerup_deactivated(): void
@@ -138,22 +142,31 @@ package "src.pacman.actors" as pactors {
     + get_state(): GhostState
     # set_state(state : GhostState): void
     + on_player_collision(): void
+    + get_next_direction() : Direction
     
   }
   class "Inky" as AI extends AG {
-    - color: ColorValue
+    # color: str
+    # get_chase_position(): Tuple[int, int]
+    # get_scatter_position(): Tuple[int, int]
     + {static} get_instance()
   }
   class "Blinky" as AB extends AG {
-    - color: ColorValue
+    # color: str
+    # get_chase_position(): Tuple[int, int]
+    # get_scatter_position(): Tuple[int, int]
     + {static} get_instance()
   }
   class "Pinky" as APi extends AG {
-    - color: ColorValue
+    # color: str
+    # get_chase_position(): Tuple[int, int]
+    # get_scatter_position(): Tuple[int, int]
     + {static} get_instance()
   }
   class "Clyde" as AC extends AG {
-    - color: ColorValue
+    # color: ColorValue
+    # get_chase_position(): Tuple[int, int]
+    # get_scatter_position(): Tuple[int, int]
     + {static} get_instance()
   }
 
@@ -162,6 +175,6 @@ package "src.pacman.actors" as pactors {
 }
 
 ppacman.GS "1" *--- "1" pmaze.MA
-pmaze.MA ---> networkx.Graph
-
+pmaze --[hidden]----- pactors 
+ppacman.Player --> pactors.AP : "Steruje"
 @enduml

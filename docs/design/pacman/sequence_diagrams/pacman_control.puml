@@ -1,0 +1,7 @@
+@startuml pacman_control
+participant "GameCore" as g
+participant "Player" as p
+participant "Pacman" as a
+
+
+@enduml pacman_control

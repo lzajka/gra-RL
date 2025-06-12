@@ -44,3 +44,5 @@ Diagram klas
 
    ghost_behavior
    rules
+   sequence_diagrams/index
+

@@ -3,7 +3,7 @@
 from . import game_core
 from . import game_config
 from src.general.aplayer import APlayer
-from ..general.direction import Direction as SnakeDir
+from src.general.direction import Direction as SnakeDir
 from .game_state import GameState
 import pygame
 from argparse import ArgumentParser

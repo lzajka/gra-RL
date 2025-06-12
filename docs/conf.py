@@ -26,7 +26,8 @@ autoapi_keep_files = True
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '_venv']
 #autoapi_ignore = ['design']
-
+plantuml_output_format = 'svg_img'
+plantuml_latex_output_format = 'tikz'
 language = 'pl'
 
 # -- Options for HTML output -------------------------------------------------

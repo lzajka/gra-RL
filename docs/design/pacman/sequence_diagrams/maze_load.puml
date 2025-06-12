@@ -1,0 +1,21 @@
+@startuml Życie wczytywania planszy
+
+participant "GameCore"
+create "Maze"
+GameCore -> Maze : Maze(file_path : String)
+activate Maze
+Maze -> Maze : _load_maze(file_path : String)
+activate Maze
+create "MazeObject"
+Maze -> MazeObject : MazeObject.create_obj_based_on_char(char)
+activate MazeObject
+MazeObject -> Maze : Maze.get_main_instance()
+activate Maze
+return Maze
+MazeObject -> Maze : _add_object(obj : MazeObject)
+activate Maze
+return 
+return MazeObject
+return
+return Maze
+@enduml

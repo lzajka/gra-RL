@@ -100,8 +100,8 @@ def play():
         logger.error('Nazwa gry nie może być "general".')
         sys.exit(1)
 
-    game_submodule_path = f'agents.{agent_name}.player' if is_agent_mode_enabled else 'human_player'
-    full_game_module_path = f'src.{game_name}.{game_submodule_path}'
+    game_submodule_path = f'.agents.{agent_name}' if is_agent_mode_enabled else ''
+    full_game_module_path = f'src.{game_name}{game_submodule_path}'
 
     logger.debug(f'Importuje: {full_game_module_path}')
     game_module = importlib.import_module(full_game_module_path)

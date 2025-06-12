@@ -50,6 +50,7 @@ class Direction(Enum):
     
     def to_ordered_int(self) -> int:
         """Metoda zwraca kierunek jako liczbę całkowitą w kolejności UP, RIGHT, DOWN, LEFT
+        
         :return: Kierunek jako liczba całkowita
         :rtype: int
         """
