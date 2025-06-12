@@ -18,6 +18,8 @@ class AGameCore(ABC):
         :type surface_order: list, optional
         """
 
+        pygame.init()
+
         self.window_dimensions = window_dimensions
         self.surface_dict : Dict[str, Surface] = dict()
         self.surface_dict['root'] = pygame.display.set_mode(window_dimensions)
@@ -27,6 +29,7 @@ class AGameCore(ABC):
 
         # Zmienne potrzebne do wyświetlania tekstu
         self.text : Dict[Tuple[int,int], TextInfo] = dict()
+        
         
     # Warstwy
 
@@ -99,9 +102,10 @@ class AGameCore(ABC):
         if pygame.font.get_fonts().count(font) == 0:
             font = pygame.font.get_default_font()
 
+        f = pygame.font.Font(font, font_size)
         # Zapisz tekst
         self.text[position] = TextInfo(
-            font=pygame.font.Font(font, font_size),
+            font=f,
             foreground_color=foreground,
             text_value=text,
             position=position

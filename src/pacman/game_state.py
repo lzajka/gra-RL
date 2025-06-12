@@ -64,7 +64,7 @@ class GameState(AGameState):
         """
         from src.pacman.game_core import GameCore
         gc : GameCore = GameCore.get_main_instance()
-        return gc.current_state
+        return gc.game_state
     
     def get_headers(self) -> List[str]:
         return [

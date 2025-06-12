@@ -91,6 +91,7 @@ class MazeObject(Drawable):
         """
         from .wall import Wall
         from .spawn_manager import SpawnManager
+        from .point import Point
 
         child = cls.character_to_class_mapping.get(char)
         if child is None:

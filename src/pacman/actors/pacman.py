@@ -44,7 +44,6 @@ class Pacman(Actor):
             self.target = (self.position[0], self.position[1] - 1)
         elif self.direction == Direction.DOWN:
             self.target = (self.position[0], self.position[1] + 1)
-
         return self.target
 
     
@@ -89,6 +88,36 @@ class Pacman(Actor):
     
     def _get_named_layer(self):
         return 'actors'
+    
+    def on_game_update(self, current_state):
+        self.check_collision(self.get_position())
+        return super().on_game_update(current_state)
+    
+    def check_collision(self, position):
+        """
+        Metoda ta jest wywoływana co każdą klatkę gry, aby sprawdzić, czy Pacman zderzył się z jakimś obiektem.
+        :param position: Pozycja, z którą Pacman ma sprawdzić kolizję.
+        :type position: tuple[int, int]
+        """
+        from src.pacman.maze import point
+        from src.pacman.game_state import GameState
+        gs = GameState.get_main_instance() 
+
+        objs = self.maze.get_objects_at(position)
+        to_destroy = []
+        if objs is not None:
+            for obj in objs:
+                if isinstance(obj, point.Point):
+                    gs.score += 1
+                    gs.collected_points += 1
+                    to_destroy.append(obj)
+
+        for obj in to_destroy:
+            obj.destroy()
+    
+
+    
+        
     
         
 

@@ -23,7 +23,7 @@ class GameCore(AGameCore):
             raise RuntimeError('Tylko jedna instancja gry może istnieć w danym czasie.')
         self.__class__._main_instance = self
         self.maze : Maze = None
-        self.current_state : GameState = None
+        self.game_state : GameState = None
 
 
     @classmethod
@@ -49,23 +49,24 @@ class GameCore(AGameCore):
         '''
 
         # Przed
-        self.prev_state = self.current_state.copy()
+        self.prev_state = self.game_state.copy()
         # Po
         # Przekaż pacmanowi ruch
         Pacman.get_instance().set_direction(move)
         self._run_hooks()
+        GameCore.get_main_instance().show_score()
         self.render()
-        self.fps_controller.tick(self.current_state.fps)
+        self.fps_controller.tick(self.game_state.fps)
         #self.game_state.events = pygame.event.get()
 
-        return self.current_state
+        return self.game_state
     
     def _run_hooks(self):
         """Uruchamia wszystkie zarejestrowane funkcje przy każdym kroku gry."""
         hooks = self.next_frame_hooks.copy()
         for hook in hooks:
             if hook is not None:
-                hook(self.current_state)
+                hook(self.game_state)
     
     def get_grid_cell_size(self):
         """Zwraca rozmiar komórki siatki w pikselach."""
@@ -77,7 +78,7 @@ class GameCore(AGameCore):
 
     def get_current_state(self):
         """Zwraca aktualny stan gry."""
-        return self.current_state
+        return self.game_state
     
     
     def on_restart(self, config):
@@ -100,9 +101,9 @@ class GameCore(AGameCore):
         self.cell_size = None
         self.maze = Maze()
         self.maze.load_maze(self.config.MAZE_FILE)
-        self.current_state = GameState(self.maze, self.config.STARTING_LIVES)
+        self.game_state = GameState(self.maze, self.config.STARTING_LIVES)
         
-        return self.current_state
+        return self.game_state
 
     def register_frame_hook(self, hook) -> int:
         """Rejestruje funkcję, która zostanie wywołana przy każdym kroku gry.
