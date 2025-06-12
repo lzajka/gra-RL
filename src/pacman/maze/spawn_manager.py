@@ -9,17 +9,16 @@ from logging import getLogger
 class SpawnManager(MazeObject):
     """Klasa odpowiedzialna za zarządzanie odradzaniem pacmana i duchów w labiryncie.
     """
+    
 
-    def __new__(cls, _):
-        """Tworzy nową instancję klasy SpawnManager."""
-        if not hasattr(cls, '_instance'):
-            SpawnManager._instance = super().__new__(cls)
-            cls.maze = Maze.get_main_instance()
-            cls.game_core = GameCore.get_main_instance()
-            cls.log = getLogger('SpawnManager')
-            cls.actor_hook_ids : Dict[Actor, int] = dict()
-            cls.enabled = True
-        return cls._instance
+    def __init__(self, pos):
+        """Inicjalizuje instancję klasy SpawnManager.
+        
+        :param pos: Pozycja, w której ma zostać zainicjalizowany SpawnManager.
+        :type pos: tuple[int, int]
+        """
+        super().__init__(pos)
+
     @classmethod
     def set_pacman_spawn(cls, spawn: Tuple[int, int]):
         """Ustawia punkt odradzania Pacmana.
@@ -27,7 +26,7 @@ class SpawnManager(MazeObject):
         :param spawn: Punkt odradzania Pacmana w postaci krotki (x, y).
         :type spawn: tuple[int, int]
         """
-        cls.pacman_spawn = spawn
+        SpawnManager.pacman_spawn = spawn
 
     @classmethod
     def set_ghost_spawn(cls, spawn: Tuple[int, int]):
@@ -36,16 +35,7 @@ class SpawnManager(MazeObject):
         :param spawn: Punkt odradzania duchów w postaci krotki (x, y).
         :type spawn: tuple[int, int]
         """
-        cls.ghost_spawn = spawn
-
-    @classmethod
-    def get_instance(cls):
-        """Zwraca instancję klasy SpawnManager.
-        
-        :return: Instancja klasy SpawnManager.
-        :rtype: SpawnManager
-        """
-        return SpawnManager._instance
+        SpawnManager.ghost_spawn = spawn
 
     @classmethod
     def request_spawn(cls, actor : Actor):
@@ -53,11 +43,14 @@ class SpawnManager(MazeObject):
         :param actor: Aktor, który ma zostać zrespawnowany.
         :type actor: Actor
         """
+        if not hasattr(cls, 'actor_hook_ids'):
+            cls.actor_hook_ids = {}
+
         if actor in cls.actor_hook_ids:
             cls.log.debug('Nie można stworzyć kolejnej prośby dla tego samego aktora.')
             return
         func = lambda _ : cls._try_spawn(actor)
-        cls.actor_hook_ids[actor] = cls.game_core.register_frame_hook(func)
+        cls.actor_hook_ids[actor] = GameCore.get_main_instance().register_frame_hook(func)
 
 
     @classmethod
@@ -81,7 +74,7 @@ class SpawnManager(MazeObject):
         
         # Jeżeli tutaj jesteśmy, oznacza to, że udało się nam 
         hook_id = cls.actor_hook_ids[actor]
-        cls.game_core.unregister_frame_hook(hook_id)
+        GameCore.get_main_instance().unregister_frame_hook(hook_id)
         del cls.actor_hook_ids[actor]
         actor.set_position(spawn_point)
         actor.on_spawn()
@@ -130,7 +123,7 @@ class _PacmanSpawner(SpawnManager):
     Nie należy jej wywoływać do tworzenia Pacmana, do tego służy klasa SpawnManager.
     """
     def __init__(self, position):
-        self.set_ghost_spawn(position)
+        self.set_pacman_spawn(position)
     
     def draw(self):
         """Nic nie rysuj
@@ -141,7 +134,7 @@ class _GhostSpawner(SpawnManager):
     Nie należy jej wywoływać do tworzenia duchów, do tego służy klasa SpawnManager.
     """
     def __init__(self, position):
-        self.set_pacman_spawn(position)
+        self.set_ghost_spawn(position)
 
     def _get_color(self):
         return GameCore.get_main_instance().get_game_config().GHOST_SPAWNER_COLOR

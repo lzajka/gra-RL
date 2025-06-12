@@ -43,8 +43,7 @@ class Player(APlayer):
         
 
         if self.move_number == 0:
-            sm : SpawnManager = SpawnManager.get_instance()
-            sm.request_spawn(self.pacman)
+            SpawnManager.request_spawn(self.pacman)
         
         # Obsługa zdarzeń
         events = pygame.event.get()
