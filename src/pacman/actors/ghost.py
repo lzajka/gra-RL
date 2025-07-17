@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from src.general import Direction
 from typing import *
 from src.pacman.maze import Maze
+import array
 
 class Ghost(Actor):
     """Klasa implementująca aktora typu Ghost w grze pacman
@@ -22,10 +23,11 @@ class Ghost(Actor):
         :type name: str
         """
         super().__init__(Maze.get_main_instance(), respawn_interval, name, (1,0)) # Ustawiam tak, aby obiekt później został przeniesiony do odpowiedniego miejsca. Tak, czy tak jest to w ścianie.
-        self.set_state(GhostState.SCATTER)  # Domyślny stan to SCATTER
+        self.set_state(GhostState.CHASE)  # Domyślny stan to SCATTER
         Ghost.ghosts.append(self)
-        self._direction : Direction = Direction.RIGHT
+        self.direction : Direction = Direction.RIGHT
         self._maze = Maze.get_main_instance()
+        self.future_direction: Direction = Direction.RIGHT  # Kierunek, w którym duch ma się poruszać w przyszłości
 
     @abstractmethod
     def on_powerup_activated(self):
@@ -104,24 +106,62 @@ class Ghost(Actor):
             return self.get_scatter_position()
         elif state == GhostState.CHASE:
             return self.get_chase_position()
-    
-    def choose_direction():
-        """Zwraca kierunek, w którym duch ma się poruszać.
-        W przypadku ducha kierunek wybierany jest o 1 krok w 
+
+    def on_intersection(self):
+        self.direction = self.future_direction
+        
+    def select_future_direction(self):
+        """Wybiera następny kierunek ruchu ducha
         """
+        target_pos = self.get_target()
+
+        # Przesuń pozycję ducha o 1 krok
+        next_pos = Maze.move_one_step(self.position, self.direction)
 
         
-    def pick_next_direction(self, target: Tuple[int, int]) -> Direction:
-        """Wybiera następny kierunek ruchu ducha na podstawie celu.
+        # Teraz sprawdź, wszystkie kierunki wokół next_pos
 
-        :param target: Cel, do którego duch ma się udać.
-        :type target: Tuple[int, int]
-        :return: Wybrany kierunek ruchu.
-        :rtype: Direction
-        """
-        # Implementacja logiki wyboru kierunku na podstawie celu
-        # Może być oparta na algorytmie A* lub BFS
-        raise NotImplementedError("Metoda pick_next_direction nie jest zaimplementowana.")
+        check_positions = [
+            (next_pos[0], next_pos[1] - 1),  # UP
+            (next_pos[0] - 1, next_pos[1]),  # LEFT
+            (next_pos[0], next_pos[1] + 1),   # DOWN
+            (next_pos[0] + 1, next_pos[1])  # RIGHT
+        ]
+
+        # Z wyjątkiem obecnej
+
+        check_positions[check_positions.index(self.position)] = (999999999, 999999999)  # Ustaw na coś co nie jest możliwe
+
+        # Uniemożliwiaj ściany
+        for i in range(len(check_positions)):
+            if self.maze.check_wall(check_positions[i]):
+                check_positions[i] = (999999999, 999999999)
+
+
+        # Sprawdź która bliżej manhatańsko do celu, priorytyzuj górę, ignoruj ściany
+
+        dist = [
+            (Direction.UP, abs(check_positions[0][0] - target_pos[0]) + abs(check_positions[0][1] - target_pos[1])),
+            (Direction.LEFT, abs(check_positions[1][0] - target_pos[0]) + abs(check_positions[1][1] - target_pos[1])),
+            (Direction.DOWN, abs(check_positions[2][0] - target_pos[0]) + abs(check_positions[2][1] - target_pos[1])),
+            (Direction.RIGHT, abs(check_positions[3][0] - target_pos[0]) + abs(check_positions[3][1] - target_pos[1]))
+        ]
+        winner = [Direction.UP, 999999999] # Ustaw tak aby zawsze była lepsza opcja
+
+        for direction, distance in dist:
+            if distance < winner[1]:
+                winner = [direction, distance]
+
+
+        self.future_direction = winner[0]
+
+            
+
+
+
+
+
+
     
         
         

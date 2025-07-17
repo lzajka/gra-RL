@@ -1,6 +1,6 @@
 from src.general.aplayer import APlayer
 from .game_core import GameCore
-from src.pacman.actors import Actor, Pacman
+from src.pacman.actors import Actor, Pacman, Blinky
 from argparse import ArgumentParser
 import pygame
 from .game_state import GameState
@@ -14,6 +14,7 @@ class Player(APlayer):
 
         super().__init__(args, config_overrides)
         self.pacman : Pacman = None
+        self.blinky : Blinky = None
 
 
     def getGame(self):
@@ -45,6 +46,10 @@ class Player(APlayer):
         if self.move_number == 0:
             SpawnManager.request_spawn(self.pacman)
         
+        if self.move_number == 10:
+            self.blinky = Blinky(self.getGame().maze)
+            SpawnManager.request_spawn(self.blinky)
+
         # Obsługa zdarzeń
         events = pygame.event.get()
         controls = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]

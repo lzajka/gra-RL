@@ -1,4 +1,6 @@
 from typing import Tuple, List, Dict, Set
+from src.general import Direction
+
 class Maze:
     """Klasa przechowująca informacje na temat labiryntu oraz elementów, z których się składa.
     """
@@ -31,8 +33,25 @@ class Maze:
         #    new_maze.objects_at[pos] = objects2
         #return new_maze
             
+    @staticmethod
+    def move_one_step(origin : Tuple[int, int], direction : Direction): 
+        """Przesuwa pozycję o jeden krok w danym kierunku.
 
-        
+        :param origin: Pozycja początkowa w postaci krotki (x, y).
+        :type origin: Tuple[int, int]
+        :param direction: Kierunek, w którym ma nastąpić przesunięcie.
+        :type direction: Direction
+        :return: Nowa pozycja po przesunięciu.
+        :rtype: Tuple[int, int]
+        """
+        if direction == Direction.LEFT:
+            return (origin[0] - 1, origin[1])
+        elif direction == Direction.RIGHT:
+            return (origin[0] + 1, origin[1])
+        elif direction == Direction.UP:
+            return (origin[0], origin[1] - 1)
+        elif direction == Direction.DOWN:
+            return (origin[0], origin[1] + 1)
 
     def load_maze(self, file_path: str):
         """Ładuje labirynt z pliku.
@@ -195,8 +214,6 @@ class Maze:
         :return: True jeśli pozycja jest przecięciem, False w przeciwnym razie.
         :rtype: bool
         """
-        return True
-        # Metoda jest niepotrzebna - Wystarczy sprawdzić, zabronić skrętu w tył.
 
         if self.check_wall(pos):
             return False
@@ -207,10 +224,10 @@ class Maze:
             (pos[0], pos[1] - 1),   # Góra
             (pos[0], pos[1] + 1)    # Dół)
         ]
+        # jedyne przypadki w których to nie jest przecięcie to: 0011 oraz 1100
 
-        empty_count = 0
-        for check_pos in check_positions:
-            if not self.check_wall(check_pos):
-                empty_count += 1
+        walls = [self.check_wall(p) for p in check_positions]
 
-        return empty_count >= 3  # Przecięcie to miejsce, gdzie są co najmniej 3 puste kierunki
+        if walls == [False, False, True, True] or walls == [True, True, False, False]:
+            return False
+        return True

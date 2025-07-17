@@ -60,21 +60,36 @@ class Actor(MazeObject):
         """
 
     @abstractmethod
-    def to_csv_line():
+    def to_csv_line(self):
         pass
 
     @abstractmethod
-    def get_csv_header():
+    def get_csv_header(self):
         pass
 
-    @abstractmethod
-    def choose_direction() -> Direction:
-        """Zwraca kierunek, w którym aktor ma się poruszać.
-
-        :return: Kierunek ruchu aktora.
-        :rtype: Direction
+    
+    def select_future_direction(self):
+        """Ustawia przyszyły kierunek ruchu aktora (`self.future_direction`). Wywoływana na skrzyżowaniach.
+        Domyślnie nie robi nic, ale może być nadpisana w klasach dziedziczących. 
         """
         pass
+
+    def on_intersection(self):
+        """Metoda wywoływana, gdy aktor znajduje się na skrzyżowaniu.
+        """
+        pass
+
+    def on_hit_wall(self, current_pos : Tuple[int,int], next_pos: Tuple[int, int]) -> Tuple[int, int]:
+        """Metoda wywoływana, gdy aktor próbuje przejść przez ścianę.
+        Domyślnie w tym wypadku aktor jest zatrzymywany i nie zmienia swojej pozycji.
+
+        :param current_pos: Aktualna pozycja aktora.
+        :type current_pos: Tuple[int, int]
+        :param next_pos: Pozycja, do której aktor próbuje się udać.
+        :type next_pos: Tuple[int, int]
+        """
+
+        return current_pos
 
     def get_next_step(self) -> Tuple[int, int]:
         """Zwraca następny krok aktora w postaci krotki (x, y).
@@ -85,23 +100,19 @@ class Actor(MazeObject):
         pos = self.get_position()
 
         if self.maze.is_intersection(pos):
-           self.direction = self.choose_direction()
+           self.on_intersection()
         
-        pos2 = None
+        future_pos = Maze.move_one_step(pos, self.direction)
 
-        if self.direction == Direction.LEFT:
-            pos2 = (self.position[0] - 1, self.position[1])
-        elif self.direction == Direction.RIGHT:
-            pos2 =(self.position[0] + 1, self.position[1])
-        elif self.direction == Direction.UP:
-            pos2 = (self.position[0], self.position[1] - 1)
-        elif self.direction == Direction.DOWN:
-            pos2 = (self.position[0], self.position[1] + 1)
-        
-        if self.maze.check_wall(pos2):
-            return pos
-        else:
-            return pos2
+        if self.maze.check_wall(future_pos):
+            future_pos = self.on_hit_wall(pos, future_pos)
+
+        # Ponieważ duch musi myśleć o 1 krok do przodu, to jeżeli następnym krokiem będzie skrzyżowanie, to wybieramy kierunek.
+        if not self.maze.check_wall(future_pos) and self.maze.is_intersection(future_pos):
+            self.select_future_direction()
+
+        return future_pos
+
 
     def on_death(self):
         """Metoda wywoływana przy śmierci aktora.
@@ -126,6 +137,13 @@ class Actor(MazeObject):
         
         new_pos = self.get_next_step()
         self.set_position(new_pos)
+    
+    def _get_filled_ratio(self):
+        gc : GameCore = GameCore.get_main_instance()
+        return gc.get_game_config().ACTOR_FILLED_RATIO
+    
+    def _get_named_layer(self):
+        return 'actors'
 
     
 

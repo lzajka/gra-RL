@@ -93,10 +93,8 @@ class SpawnManager(MazeObject):
         """
         if actor.name == "Pacman":
             return cls.pacman_spawn
-        elif actor.name == "Ghost":
-            return cls.ghost_spawn
         else:
-            raise ValueError("Nieznany typ aktora.")
+            return cls.ghost_spawn
 
 
 

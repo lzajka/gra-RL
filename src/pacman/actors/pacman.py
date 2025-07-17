@@ -55,9 +55,8 @@ class Pacman(Actor):
         """
         if direction is not None:
             self.prepicked_direction = direction
-        
     
-    def choose_direction(self):
+    def on_intersection(self):
         prev_dir = self.direction
     
         self.direction = self.prepicked_direction
@@ -68,17 +67,19 @@ class Pacman(Actor):
             # Nie mozna, wiec nie zmieniaj kierunku
             self.direction = prev_dir
         # 2. Sprawdz czy mozna w ogole w tym kierunku isc
-        elif self.maze.check_wall(self.get_target):
+        elif self.maze.check_wall(self.get_target()):
         # Jeżeli nie można, to nie zmieniaj kierunku
             self.direction = prev_dir
         
-        return self.direction
+    def get_csv_header(self):
+        return ['PacmanPosX', 'PacmanPosY', 'PacmanDirection']
 
-    def get_csv_header():
-        pass
-
-    def to_csv_line():
-        pass
+    def to_csv_line(self):
+        return [
+            str(self.position[0]),
+            str(self.position[1]),
+            self.direction.name
+        ]
 
     def _get_filled_ratio(self):
         return GameCore.get_main_instance().get_game_config().ACTOR_FILLED_RATIO
