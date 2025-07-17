@@ -19,17 +19,15 @@ class Blinky(Ghost):
 
     def get_chase_position(self) -> Tuple[int, int]:
         """Zwraca pozycję chase dla ducha blinky.
-        W przypadku blinky'ego jest to pozycja Pacmana przesunięta o 1 krok do przodu.
-
+        W przypadku blinky'ego jest to pozycja Pacmana.
         :return: Pozycja chase w postaci krotki (x, y).
         :rtype: Tuple[int, int]
         """
         from src.pacman.actors.pacman import Pacman
         pacman : Pacman = Pacman.get_instance()
         current_pos = pacman.get_position()
-        future_pos = Maze.move_one_step(current_pos, pacman.direction)
 
-        return future_pos
+        return current_pos
 
     
     def copy(self):
