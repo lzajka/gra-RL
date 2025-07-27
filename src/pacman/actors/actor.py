@@ -47,9 +47,6 @@ class Actor(MazeObject):
         :rtype: Actor
         """
         pass
-    def on_spawn(self):
-        self.direction = Direction.RIGHT
-
 
     @abstractmethod
     def get_target() -> Tuple[int, int]:
