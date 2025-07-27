@@ -72,9 +72,9 @@ class SpawnManager(MazeObject):
             cls.log.info('Nie można zespawnować ducha - gracz blokuje spawn')
             return
         
-        # Jeżeli tutaj jesteśmy, oznacza to, że udało się nam 
+        # Jeżeli tutaj jesteśmy, oznacza to, że udało się nam, można sobie odpiąc hooka na tworzeniu
         hook_id = cls.actor_hook_ids[actor]
-        GameCore.get_main_instance().unregister_frame_hook(hook_id)
+        GameCore.get_main_instance().unregister_frame_hook(hook_id, 0)
         del cls.actor_hook_ids[actor]
         actor.set_position(spawn_point)
         actor.on_spawn()
