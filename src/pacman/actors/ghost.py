@@ -116,7 +116,7 @@ class Ghost(Actor):
         target_pos = self.get_target()
 
         # Przesuń pozycję ducha o 1 krok
-        next_pos = Maze.move_one_step(self.position, self.direction)
+        next_pos = Maze.shift_position(self.position, self.direction)
 
         
         # Teraz sprawdź, wszystkie kierunki wokół next_pos

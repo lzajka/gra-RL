@@ -102,7 +102,7 @@ class Actor(MazeObject):
         if self.maze.is_intersection(pos):
            self.on_intersection()
         
-        future_pos = Maze.move_one_step(pos, self.direction)
+        future_pos = Maze.shift_position(pos, self.direction)
 
         if self.maze.check_wall(future_pos):
             future_pos = self.on_hit_wall(pos, future_pos)

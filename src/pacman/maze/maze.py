@@ -34,7 +34,7 @@ class Maze:
         #return new_maze
             
     @staticmethod
-    def move_one_step(origin : Tuple[int, int], direction : Direction): 
+    def shift_position(origin : Tuple[int, int], direction : Direction, steps: int = 1) -> Tuple[int, int]:
         """Przesuwa pozycję o jeden krok w danym kierunku.
 
         :param origin: Pozycja początkowa w postaci krotki (x, y).
@@ -45,13 +45,13 @@ class Maze:
         :rtype: Tuple[int, int]
         """
         if direction == Direction.LEFT:
-            return (origin[0] - 1, origin[1])
+            return (origin[0] - steps, origin[1])
         elif direction == Direction.RIGHT:
-            return (origin[0] + 1, origin[1])
+            return (origin[0] + steps, origin[1])
         elif direction == Direction.UP:
-            return (origin[0], origin[1] - 1)
+            return (origin[0], origin[1] - steps)
         elif direction == Direction.DOWN:
-            return (origin[0], origin[1] + 1)
+            return (origin[0], origin[1] + steps)
 
     def load_maze(self, file_path: str):
         """Ładuje labirynt z pliku.
