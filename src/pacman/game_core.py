@@ -6,9 +6,12 @@ from src.general import Direction
 from src.pacman.maze import Maze
 from queue import Queue
 import pygame
+HOOK_PRIORITY_COUNT = 10
 
 class GameCore(AGameCore):
     _main_instance = None
+    
+
     def __init__(self):
         self.config = self.get_default_config()
 
@@ -24,6 +27,7 @@ class GameCore(AGameCore):
         self.__class__._main_instance = self
         self.maze : Maze = None
         self.game_state : GameState = None
+        self.free_hooks = []
 
 
     @classmethod
@@ -63,7 +67,7 @@ class GameCore(AGameCore):
     
     def _run_hooks(self):
         """Uruchamia wszystkie zarejestrowane funkcje przy każdym kroku gry."""
-        hooks = self.next_frame_hooks.copy()
+        hooks = sum(self.next_frame_hooks, [])
         for hook in hooks:
             if hook is not None:
                 hook(self.game_state)
@@ -92,7 +96,11 @@ class GameCore(AGameCore):
             config = GameConfig()
         self.config = config
         self.next_frame_hooks = []
-        self.free_hooks = Queue()
+
+        for _ in range(HOOK_PRIORITY_COUNT):
+            self.free_hooks.append(Queue())
+            self.next_frame_hooks.append([])
+
         self.fill_layer('background', (0,0,0))
 
 
@@ -105,41 +113,57 @@ class GameCore(AGameCore):
         
         return self.game_state
 
-    def register_frame_hook(self, hook) -> int:
+    def register_frame_hook(self, hook, priority_group=0) -> int:
         """Rejestruje funkcję, która zostanie wywołana przy każdym kroku gry.
         
         :param hook: Funkcja, która zostanie wywołana przy każdym kroku gry.
         :type hook: Callable
+        :param priority_group: Grupa priorytetowa, do której należy funkcja. Funkcje o niższej wartości będą wywoływane wcześniej. Domyślnie 0.
+        :type priority_group: int
         :raises TypeError: Jeśli hook nie jest funkcją.
+        :raises IndexError: Jeśli grupa priorytetowa jest spoza zakresu.
         :return: Indeks, pod którym funkcja została zarejestrowana.
         :rtype: int
         """
+
+        if priority_group < 0 or priority_group >= HOOK_PRIORITY_COUNT:
+            raise IndexError('Nieprawidłowa grupa priorytetowa.')
         if not callable(hook):
             raise TypeError('Hook musi być funkcją.')
         
-        if not self.free_hooks.empty():
-            hook_id = self.free_hooks.get()
+        if not self.free_hooks[priority_group].empty():
+            hook_id = self.free_hooks[priority_group].get()
         else:
-            self.next_frame_hooks.append(None)
-            hook_id = len(self.next_frame_hooks) - 1
-        
-        self.next_frame_hooks[hook_id] = hook
+            self.next_frame_hooks[priority_group].append(None)
+            hook_id = len(self.next_frame_hooks[priority_group]) - 1
+
+        self.next_frame_hooks[priority_group][hook_id] = hook
         return hook_id
 
-    def unregister_frame_hook(self, hook_id : int) -> None:
+    def unregister_frame_hook(self, hook_id : int, priority_group: int) -> None:
         """Usuwa funkcję z listy funkcji wywoływanych przy każdym kroku gry.
 
-        :param hook: _description_
-        :type hook: _type_
+        :param hook: Identyfikator funkcji, która ma zostać usunięta.
+        :type hook: int
+        :param priority_group: Grupa priorytetowa, do której należy funkcja.
+        :type priority_group: int
+        :raises IndexError: Jeśli indeks hooka jest spoza zakresu.
+        :raises ValueError: Jeśli hook o podanym indeksie nie jest zarejestrowany.
+        :raises IndexError: Jeśli grupa priorytetowa jest spoza zakresu.
         """
 
-        if hook_id < 0 or hook_id >= len(self.next_frame_hooks):
+        if priority_group < 0 or priority_group >= HOOK_PRIORITY_COUNT:
+            raise IndexError('Nieprawidłowa grupa priorytetowa.')
+        
+        hook_group = self.next_frame_hooks[priority_group]
+
+        if hook_id < 0 or hook_id >= len(hook_group):
             raise IndexError('Nieprawidłowy indeks hooka.')
 
-        if self.next_frame_hooks[hook_id] is None:
+        if hook_group[hook_id] is None:
             raise ValueError('Hook o podanym indeksie nie jest zarejestrowany.')
-        self.next_frame_hooks[hook_id] = None
-        self.free_hooks.put(hook_id)
+        hook_group[hook_id] = None
+        self.free_hooks[priority_group].put(hook_id)
 
     def get_default_config(self):
         return GameConfig()
