@@ -21,8 +21,8 @@ class Actor(MazeObject):
         :param spawn: Punkt startowy aktora w labiryncie.
         :type spawn: Tuple[int, int]
         """
-        from src.pacman.maze.spawn_manager import SpawnManager
         self.maze = maze
+        self.new_pos = 0
         super().__init__(spawn)
         self.respawn_interval = respawn_interval
         self.name = name
