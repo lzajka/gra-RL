@@ -122,19 +122,27 @@ class Actor(MazeObject):
         Domyślnie ustawia kierunek na prawo.
         """
         self.direction = Direction.RIGHT
-        GameCore.get_main_instance().register_frame_hook(self.on_game_update)
-
+        game : GameCore = GameCore.get_main_instance()
+        game.register_frame_hook(self.on_game_update, priority_group=1)
+        game.register_frame_hook(self.post_game_update, priority_group=2)
 
     def on_game_update(self, current_state: GameState):
-        """Metoda wywoływana przy aktualizacji stanu gry.
+        """Metoda wywoływana przy aktualizacji stanu gry. 
+        W celu uniknięcia częściowych aktualizacji, zmienne widoczne z zewnątrz powinny być dopiero aktualizowane w `post_game_update`.
 
         :param current_state: Aktualny stan gry.
         :type current_state: GameState
         """
-        
-        new_pos = self.get_next_step()
-        self.set_position(new_pos)
-    
+        self.new_pos = self.get_next_step()
+
+    def post_game_update(self, current_state: GameState):
+        """Metoda wywoływana po aktualizacji wszystkich aktorów. Służy do zatwierdzenia zmian w stanie aktora.
+
+        :param current_state: Aktualny stan gry.
+        :type current_state: GameState
+        """
+        self.set_position(self.new_pos)
+
     def _get_filled_ratio(self):
         gc : GameCore = GameCore.get_main_instance()
         return gc.get_game_config().ACTOR_FILLED_RATIO
