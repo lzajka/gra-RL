@@ -25,8 +25,8 @@ class GameConfig:
     WALL_FILLED_RATIO   = 1
     PACMAN_COLOR        = 'yellow'
     ACTOR_FILLED_RATIO  = 0.8
-    INKY_COLOR          = 'pink'
-    PINKY_COLOR         = 'orange'
+    INKY_COLOR          = 'blue'
+    PINKY_COLOR         = 'pink'
     BLINKY_COLOR        = 'red'
     CLYDE_COLOR         = 'cyan'
     FRIGHT_COLOR        = 'purple'
