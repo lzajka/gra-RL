@@ -46,7 +46,7 @@ class Player(APlayer):
         if self.move_number == 0:
             SpawnManager.request_spawn(self.pacman)
         
-        if self.move_number == 10:
+        elif self.move_number == 5:
             self.blinky = Blinky(self.getGame().maze)
             SpawnManager.request_spawn(self.blinky)
 
