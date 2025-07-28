@@ -4,6 +4,7 @@ from .ghost_state import GhostState
 from .pacman import Pacman
 from .blinky import Blinky
 from .inky import Inky
+from .pinky import Pinky
 
 __all__ = [
     "Actor",
@@ -11,5 +12,6 @@ __all__ = [
     "GhostState",
     "Pacman",
     "Blinky",
-    "Inky"
+    "Inky",
+    "Pinky"
 ]
