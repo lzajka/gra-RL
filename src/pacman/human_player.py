@@ -1,6 +1,6 @@
 from src.general.aplayer import APlayer
 from .game_core import GameCore
-from src.pacman.actors import Actor, Pacman, Blinky, Inky, Pinky
+from src.pacman.actors import Actor, Pacman, Blinky, Inky, Pinky, Clyde
 from argparse import ArgumentParser
 import pygame
 from .game_state import GameState
@@ -58,6 +58,10 @@ class Player(APlayer):
         elif self.move_number == 15:
             self.inky = Inky(self.getGame().maze)
             SpawnManager.request_spawn(self.inky)
+        
+        elif self.move_number == 20:
+            self.clyde = Clyde(self.getGame().maze)
+            SpawnManager.request_spawn(self.clyde)
 
         # Obsługa zdarzeń
         events = pygame.event.get()
