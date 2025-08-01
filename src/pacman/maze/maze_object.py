@@ -89,9 +89,7 @@ class MazeObject(Drawable):
         :return: Obiekt labiryntu odpowiadający znakowi.
         :rtype: MazeObject
         """
-        from .wall import Wall
-        from .spawn_manager import SpawnManager
-        from .point import Point
+        from . import wall, spawn_manager, point, scatter_target
 
         child = cls.character_to_class_mapping.get(char)
         if child is None:

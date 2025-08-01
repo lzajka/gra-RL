@@ -7,13 +7,9 @@ class Inky(Ghost):
     """
 
     def __init__(self, *args, **kwargs):
+        kwargs['name'] = 'inky'
         super().__init__(*args, **kwargs)
-        self.name = "Inky"
         Maze.get_main_instance().inky = self
-
-    def get_scatter_position(self):
-        """Zwraca pozycję scatter dla ducha Inky."""
-        return None
         
 
     def get_chase_position(self):

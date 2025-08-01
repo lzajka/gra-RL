@@ -18,6 +18,7 @@ class Maze:
         self.pinky = None
         self.clyde = None
         self.pacman = None
+        self.scatter_positions = {}
     
     def copy(self) -> 'Maze':
         """Tworzy i zwraca kopię labiryntu.
@@ -86,6 +87,28 @@ class Maze:
         
         return self.objects_at.values()
     
+    def set_scatter_position(self, ghost_name: str, position: Tuple[int, int]):
+        """Ustawia pozycję scatter dla danego ducha.
+
+        :param ghost_name: Nazwa ducha, dla którego ustawiana jest pozycja scatter.
+        :type ghost_name: str
+        :param position: Pozycja scatter w postaci krotki (x, y).
+        :type position: Tuple[int, int]
+        """
+        self.scatter_positions[ghost_name] = position
+
+    def get_scatter_position(self, ghost_name: str) -> Tuple[int, int]:
+        """Zwraca pozycję scatter dla danego ducha.
+
+        :param ghost_name: Nazwa ducha, dla którego chcemy uzyskać pozycję scatter.
+        :type ghost_name: str
+        :return: Pozycja scatter w postaci krotki (x, y).
+        :rtype: Tuple[int, int]
+        """
+        pos =  self.scatter_positions.get(ghost_name, None)
+        if pos is None:
+            raise ValueError(f"Nie znaleziono pozycji scatter dla ducha: {ghost_name}")
+        return pos
 
     def get_objects_at(self, pos : Tuple[int,int]):
         """Zwraca zbiór obiektów znajdujących się w danym miejscu labiryntu.

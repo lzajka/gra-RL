@@ -121,7 +121,6 @@ class Actor(MazeObject):
         """Metoda wywoływana przy respawnie aktora.
         Domyślnie ustawia kierunek na prawo.
         """
-        self.direction = Direction.RIGHT
         game : GameCore = GameCore.get_main_instance()
         game.register_frame_hook(self.on_game_update, priority_group=1)
         game.register_frame_hook(self.post_game_update, priority_group=2)

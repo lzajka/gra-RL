@@ -7,14 +7,11 @@ class Blinky(Ghost):
     """
 
     def __init__(self, *args, **kwargs):
+        kwargs['name'] = 'blinky'
         super().__init__(*args, **kwargs)
-        self.name = "blinky"
         Maze.get_main_instance().blinky = self
-        self.scatter_pos = (0,0)
 
-    def get_scatter_position(self):
-        """Zwraca pozycję scatter dla ducha blinky."""
-        return self.scatter_pos
+
         
 
     def get_chase_position(self) -> Tuple[int, int]:

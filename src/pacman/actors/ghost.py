@@ -23,25 +23,25 @@ class Ghost(Actor):
         :type name: str
         """
         super().__init__(Maze.get_main_instance(), respawn_interval, name, (1,0)) # Ustawiam tak, aby obiekt później został przeniesiony do odpowiedniego miejsca. Tak, czy tak jest to w ścianie.
-        self.set_state(GhostState.CHASE)  # Domyślny stan to SCATTER
         Ghost.ghosts.append(self)
-        self.direction : Direction = Direction.RIGHT
         self._maze = Maze.get_main_instance()
-        self.future_direction: Direction = Direction.RIGHT  # Kierunek, w którym duch ma się poruszać w przyszłości
+        self.scatter_pos = self.maze.get_scatter_position(self.name)
+        if self.scatter_pos is None:
+            raise ValueError(f"Nie ustawiono pozycji scatter dla ducha {self.name}. Upewnij się, że jest zdefiniowana w pliku labiryntu")
 
     @abstractmethod
     def on_powerup_activated(self):
         """Metoda wywoływana, gdy power-up jest aktywowany.
         Powinna być zaimplementowana w klasach dziedziczących.
         """
-        raise NotImplementedError("Metoda on_powerup_activated nie jest zaimplementowana.")
+        raise NotImplementedError("TODO")
     
     @abstractmethod
     def on_powerup_deactivated(self):
         """Metoda wywoływana, gdy power-up jest dezaktywowany.
         Powinna być zaimplementowana w klasach dziedziczących.
         """
-        raise NotImplementedError("Metoda on_powerup_deactivated nie jest zaimplementowana.")
+        raise NotImplementedError("TODO")
 
     @classmethod
     def notify_instances_powerup_activated():
@@ -57,14 +57,13 @@ class Ghost(Actor):
         for ghost in Ghost.ghosts:
             ghost.on_powerup_deactivated()
 
-    @abstractmethod
     def get_scatter_position(self) -> Tuple[int, int]:
         """Zwraca pozycję scatter dla tego ducha.
 
         :return: Pozycja scatter w postaci krotki (x, y).
         :rtype: Tuple[int, int]
         """
-        raise NotImplementedError("Metoda get_scatter_position nie jest zaimplementowana.")
+        return self.scatter_pos
     
     @abstractmethod
     def get_chase_position(self) -> Tuple[int, int]:
@@ -73,7 +72,7 @@ class Ghost(Actor):
         :return: Pozycja chase w postaci krotki (x, y).
         :rtype: Tuple[int, int]
         """
-        raise NotImplementedError("Metoda get_chase_position nie jest zaimplementowana.")
+        pass
     
     def get_state(self) -> GhostState:
         """Zwraca aktualny stan ducha.
@@ -110,7 +109,7 @@ class Ghost(Actor):
     def on_intersection(self):
         self.direction = self.future_direction
         
-    def select_future_direction(self):
+    def select_future_direction(self, allow_turnbacks: bool = False):
         """Wybiera następny kierunek ruchu ducha
         """
         target_pos = self.get_target()
@@ -130,7 +129,7 @@ class Ghost(Actor):
 
         # Z wyjątkiem obecnej
 
-        check_positions[check_positions.index(self.position)] = (999999999, 999999999)  # Ustaw na coś co nie jest możliwe
+        if not allow_turnbacks: check_positions[check_positions.index(self.position)] = (999999999, 999999999)  # Ustaw na coś co nie jest możliwe
 
         # Uniemożliwiaj ściany
         for i in range(len(check_positions)):
@@ -154,6 +153,22 @@ class Ghost(Actor):
 
 
         self.future_direction = winner[0]
+
+    def on_spawn(self):
+        super().on_spawn()
+        self.set_state(GhostState.SCATTER)      # Domyślny stan to SCATTER
+
+        # Zrób tak aby duch decydował na pozycji spawnowej
+        self.direction = Direction.RIGHT
+        spawn_pos = self.get_position()
+        self.set_position(Maze.shift_position(spawn_pos, Direction.LEFT))
+        # Wykonaj select_future_direction, aby ustawić przyszły kierunek
+        self.select_future_direction(allow_turnbacks=True)
+        # i od razu zmień kierunek na przyszły
+        self.direction = self.future_direction
+        # Przywróć poprzednią pozycję
+        self.set_position(spawn_pos)
+        
 
             
 
