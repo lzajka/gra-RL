@@ -3,11 +3,25 @@ from src.pacman.maze import MazeObject, Maze
 from abc import ABC, abstractmethod
 from src.general import Direction
 from src.pacman.game_core import GameCore, GameState
+from collections import deque
+
+detected_collisions = deque()
+
+def execute_on_collisions(_):
+    from src.pacman.maze.collidable import Collidable
+    while len(detected_collisions) != 0:
+        collision : Tuple['Actor', Collidable] = detected_collisions.popleft()
+        actor, collidable = collision
+
+        collidable.on_collision(actor)
+
+    
 
 class Actor(MazeObject):
     """Klasa reprezentująca aktora w grze Pacman, dziedzicząca po MazeObject.
     Aktorzy mogą poruszać się po labiryncie i posiadają stan.
     """
+    registered_collision_hooks = False
 
     def __init__(self, maze : Maze, respawn_interval: int = 0, name: str = "Actor", spawn: Tuple[int, int] = None):
         """Inicjalizuje aktora na podstawie punktu startowego i interwału respawnu.
@@ -21,6 +35,11 @@ class Actor(MazeObject):
         :param spawn: Punkt startowy aktora w labiryncie.
         :type spawn: Tuple[int, int]
         """
+        if not Actor.registered_collision_hooks:
+            game : GameCore = GameCore.get_main_instance()
+            game.register_frame_hook(execute_on_collisions, priority_group=4)
+            Actor.registered_collision_hooks = True
+
         self.maze = maze
         self.new_pos = 0
         super().__init__(spawn)
@@ -123,7 +142,8 @@ class Actor(MazeObject):
         """
         game : GameCore = GameCore.get_main_instance()
         game.register_frame_hook(self.on_game_update, priority_group=1)
-        game.register_frame_hook(self.post_game_update, priority_group=2)
+        game.register_frame_hook(self.commit_changes, priority_group=2)
+        game.register_frame_hook(self._detect_collisions, priority_group=3)
 
     def on_game_update(self, current_state: GameState):
         """Metoda wywoływana przy aktualizacji stanu gry. 
@@ -134,7 +154,8 @@ class Actor(MazeObject):
         """
         self.new_pos = self.get_next_step()
 
-    def post_game_update(self, current_state: GameState):
+
+    def commit_changes(self, current_state: GameState):
         """Metoda wywoływana po aktualizacji wszystkich aktorów. Służy do zatwierdzenia zmian w stanie aktora.
 
         :param current_state: Aktualny stan gry.
@@ -142,12 +163,31 @@ class Actor(MazeObject):
         """
         self.set_position(self.new_pos)
 
+    def _detect_collisions(self, current_state: GameState):
+        """Metoda wykrywa i zapisuje wykryte kolizje z innymi obiektami
+        """
+        from src.pacman.maze.collidable import Collidable
+        global detected_collisions
+        maze = self.maze
+
+        pos = self.get_position()
+        objects = maze.get_objects_at(pos)
+
+        for object in objects:
+            # Sprawdź czy z objektem można zajść w kolizję i upewnij się że ten obiekt jest inny niż obecny
+            if isinstance(object, Collidable) and id(object) != id(self):
+                detected_collisions.append((self, object))
+        
+
     def _get_filled_ratio(self):
         gc : GameCore = GameCore.get_main_instance()
         return gc.get_game_config().ACTOR_FILLED_RATIO
     
     def _get_named_layer(self):
         return 'actors'
+    
+    def destroy(self):
+        raise NotImplementedError("Nie zaimplementowano")
 
     
 
