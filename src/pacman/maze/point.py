@@ -1,8 +1,8 @@
 from .maze_object import MazeObject
 from src.pacman.game_config import GameConfig
+from .collidable import Collidable
 
-
-class Point(MazeObject):
+class Point(MazeObject, Collidable):
     """Reprezentuje punktu w labiryncie Pacmana.
     Ściana jest obiektem statycznym, który nie zmienia swojej pozycji ani stanu w trakcie gry.
     """
@@ -38,6 +38,21 @@ class Point(MazeObject):
     def copy(self):
         s = Point(self.position)
         return s
+    
+    def get_reward(self):
+        return 1
+    
+    def get_point_type(self):
+        return 'point'
+
+    def on_collision(self, obj):
+        from src.pacman.actors.pacman import Pacman
+        from src.pacman.game_state import GameState
+        gs = GameState.get_main_instance()
+        if isinstance(obj, Pacman):
+            gs.score += self.get_reward()
+            gs.collected[self.get_point_type()] += 1
+            self.destroy()
 
 
 MazeObject.character_to_class_mapping['.'] = Point
