@@ -17,7 +17,11 @@ class GameState(AGameState):
         self.remaining_lives = starting_lives
         self.is_game_over = False
         self.score = 0
-        self.collected_points = 0
+        self.collected = {
+            'point': 0,
+            'big_point': 0,
+            'fruit': 0
+        }
         self.max_points = 0
         self.fps = 2
         self.events = []
@@ -41,7 +45,7 @@ class GameState(AGameState):
         gsc.remaining_lives = self.remaining_lives
         gsc.is_game_over = self.is_game_over
         gsc.score = self.score
-        gsc.collected_points = self.collected_points
+        gsc.collected = self.collected
         #gsc.remaining_points = self.remaining_points
         gsc.max_points = self.max_points
         gsc.fps = self.fps
@@ -51,7 +55,7 @@ class GameState(AGameState):
             self.remaining_lives,
             self.is_game_over,
             self.score,
-            self.collected_points,
+            self.collected,
             #self.remaining_points
         ]
     

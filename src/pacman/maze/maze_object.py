@@ -22,13 +22,12 @@ class MazeObject(Drawable):
         self.maze._add_object(self)
 
 
-    @abstractmethod
+    
     def to_csv_line() -> List[str]:
-        pass
+        return []
 
-    @abstractmethod
     def get_csv_header() -> List[str]:
-        pass
+        return []
 
     
     def get_position(self) -> tuple[int, int]:
@@ -89,7 +88,7 @@ class MazeObject(Drawable):
         :return: Obiekt labiryntu odpowiadający znakowi.
         :rtype: MazeObject
         """
-        from . import wall, spawn_manager, point, scatter_target
+        from . import wall, spawn_manager, point, scatter_target, warp
 
         child = cls.character_to_class_mapping.get(char)
         if child is None:
