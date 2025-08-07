@@ -23,7 +23,7 @@ class Actor(MazeObject):
     """
     registered_collision_hooks = False
 
-    def __init__(self, maze : Maze, respawn_interval: int = 0, name: str = "Actor", spawn: Tuple[int, int] = None, base_speed=Decimal('0.05')):
+    def __init__(self, maze : Maze, respawn_interval: int = 0, name: str = "Actor", spawn: Tuple[int, int] = None, base_speed=None):
         """Inicjalizuje aktora na podstawie punktu startowego i interwału respawnu.
 
         :param Maze maze: Obiekt labiryntu, w którym aktor będzie się poruszał.
@@ -39,6 +39,9 @@ class Actor(MazeObject):
             game : GameCore = GameCore.get_main_instance()
             game.register_frame_hook(execute_on_collisions, priority_group=4)
             Actor.registered_collision_hooks = True
+
+        if base_speed is None:
+            base_speed = GameCore.get_main_instance().get_game_config().BASE_SPEED
 
         self.maze = maze
         self.new_pos = 0
