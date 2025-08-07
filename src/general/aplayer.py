@@ -127,7 +127,8 @@ class APlayer(ABC):
     def quit(self):
         self.on_quit()
         if self.file is not None: self.file.close()
-        self.game.quit()
+        from pygame import quit
+        quit()
 
     def on_quit(self):
         """Event handler wywoływany po zakończeniu gry.
