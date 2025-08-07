@@ -31,7 +31,7 @@ class GameCore(AGameCore):
 
 
     @classmethod
-    def get_main_instance(cls):
+    def get_main_instance(cls) -> 'GameCore':
         """Zwraca główną instancję gry."""
         return cls._main_instance
 
