@@ -49,10 +49,19 @@ class Point(MazeObject, Collidable):
         from src.pacman.actors.pacman import Pacman
         from src.pacman.game_state import GameState
         gs = GameState.get_main_instance()
-        if isinstance(obj, Pacman):
-            gs.score += self.get_reward()
-            gs.collected[self.get_point_type()] += 1
-            self.destroy()
+
+        if not isinstance(obj, Pacman):
+            return
+
+        pacman : Pacman = obj
+
+        self.prev_multi = pacman.get_speed_multiplier()
+        gs.score += self.get_reward()
+        gs.collected[self.get_point_type()] += 1
+        pacman.pause(1)
+        self.destroy()
+
+            
 
 
 MazeObject.character_to_class_mapping['.'] = Point

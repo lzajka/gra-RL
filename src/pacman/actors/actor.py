@@ -52,6 +52,7 @@ class Actor(MazeObject):
         self.name = name
         self.direction = Direction.RIGHT
         self.base_speed = base_speed
+        self._pause = 0
     
     def get_spawn_point(self) -> Tuple[int, int]:
         """Zwraca punkt startowy aktora w postaci krotki (x, y).
@@ -72,9 +73,15 @@ class Actor(MazeObject):
         """        
         if self.base_speed * Decimal(self.multiplier) > 1:
             raise ValueError('Wynik mnożenia prędkości podstawowej i mnożnika większy niż 1.')
-        self.multiplier = Decimal(self.multiplier)
+        self.multiplier = Decimal(multiplier)
 
-    
+    def get_speed_multiplier(self) -> Decimal:
+        """Zwraca mnożnik prędkości aktora.
+
+        :return: Mnożnik prędkości aktora
+        :rtype: Decimal
+        """
+        return self.multiplier
 
     def get_speed(self) -> Decimal:
         """Metoda zwraca prędkość aktora. Prędkość jest wynikiem mnożenia prędkości podstawowej oraz mnożnika.
@@ -136,12 +143,14 @@ class Actor(MazeObject):
 
     def get_next_step(self) -> Tuple[Decimal, Decimal]:
         """Zwraca następny krok aktora w postaci krotki (x, y).
+        Respektuje metodę pause
 
         :return: Następny krok w postaci krotki (x, y).
         :rtype: Tuple[float, float]
         """
         pos = self.get_position()
         prec_pos = self.get_precise_position()
+
         is_intersection = self.maze.is_intersection(pos)
         is_in_center = prec_pos[0] % Decimal(1) == 0 and prec_pos[1] % Decimal(1) == 0
 
@@ -158,13 +167,16 @@ class Actor(MazeObject):
         future_block = (future_pos[0].to_integral_value(ROUND_HALF_UP), future_pos[1].to_integral_value(ROUND_HALF_UP))
         is_about_to_change_block = future_block != pos
 
+        if self._pause > 0:
+            self._pause -= 1
+            return prec_pos
+
         if is_about_to_change_block and self.maze.is_intersection(future_block):
             self.select_future_direction()
 
         return future_pos
 
-
-    def on_death(self):
+    def kill(self):
         """Metoda wywoływana przy śmierci aktora.
         Domyślnie ustawia kierunek na prawo i uruchamia respawn.
         """
@@ -222,6 +234,15 @@ class Actor(MazeObject):
     
     def destroy(self):
         raise NotImplementedError("Nie zaimplementowano")
+        
+    def pause(self, frames : int):
+        """Wstrzymuje ruch pacmana na określoną ilość klatek.
+
+        :param frames: 
+        :type frames: int
+        """
+        self._pause = frames
+
 
     
 
