@@ -115,7 +115,8 @@ class Ghost(Actor):
         target_pos = self.get_target()
 
         # Przesuń pozycję ducha o 1 krok
-        next_pos = Maze.shift_position(self.position, self.direction)
+        pos = self.get_position()
+        next_pos = Maze.shift_position(pos, self.direction)
 
         
         # Teraz sprawdź, wszystkie kierunki wokół next_pos
@@ -129,7 +130,7 @@ class Ghost(Actor):
 
         # Z wyjątkiem obecnej
 
-        if not allow_turnbacks: check_positions[check_positions.index(self.position)] = (999999999, 999999999)  # Ustaw na coś co nie jest możliwe
+        if not allow_turnbacks: check_positions[check_positions.index(pos)] = (999999999, 999999999)  # Ustaw na coś co nie jest możliwe
 
         # Uniemożliwiaj ściany
         for i in range(len(check_positions)):

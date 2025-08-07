@@ -130,11 +130,11 @@ class AGameCore(ABC):
         pass 
 
 
-    def draw_box(self, pos : Tuple[int, int], color, cell_size : int = None, id : str = 'root', filled_ratio : float = 1):
+    def draw_box(self, pos : Tuple[float, float], color, cell_size : int = None, id : str = 'root', filled_ratio : float = 1):
         """Metoda rysuje kwadrat na podanej pozycji
 
         :param pos: Pozycja
-        :type pos: Tuple[int, int]
+        :type pos: Tuple[float, float]
         :param color: Kolor
         :type color: ColorValue
         :param cell_size: Bok kwadratu w px

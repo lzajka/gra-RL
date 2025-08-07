@@ -1,19 +1,35 @@
 from abc import ABC, abstractmethod
 from .agame_core import AGameCore
+from typing import Tuple
 
 class Drawable(ABC):
     """
     Klasa abstrakcyjna reprezentująca obiekt, który może być rysowany na ekranie gry.
     """
 
-    @abstractmethod
-    def get_position(self) -> tuple[int, int]:
+
+    def get_position(self) -> tuple[float, float]:
+        return None
+    
+    def get_precise_position(self) -> tuple[float, float]:
         """Zwraca pozycję obiektu w postaci krotki (x, y).
 
         :return: Pozycja obiektu.
-        :rtype: tuple[int, int]
+        :rtype: tuple[float, float]
         """
-        pass
+        return None
+    
+    def _pos(self) -> Tuple[float, float]:
+        prec_pos = self.get_precise_position()
+        int_pos = self.get_position()
+
+        if prec_pos is not None:
+            return float(prec_pos[0]), float(prec_pos[1])
+        elif int_pos is not None:
+            return float(prec_pos[0]), float(prec_pos[1])
+        else:
+            raise NotImplementedError('Przynajmniej jedna z metod get_position oraz get_precise_position musi zostać zaimplementowana')
+
 
     @abstractmethod
     def _get_filled_ratio(self) -> int:
@@ -65,7 +81,7 @@ class Drawable(ABC):
     def draw(self):
         """Rysuje obiekt na ekranie."""
         game_core = self._get_game_core()
-        position = self.get_position()
+        position = self._pos()
         filled_ratio = self._get_filled_ratio()
         color = self._get_color()
         layer = self._get_named_layer()
@@ -76,7 +92,7 @@ class Drawable(ABC):
     def erase(self):
         """Czyści obiekt z ekranu."""
         game_core = self._get_game_core()
-        position = self.get_position()
+        position = self._pos()
         filled_ratio = self._get_filled_ratio()
         color = (0, 0, 0, 0)
         layer = self._get_named_layer()

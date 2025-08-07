@@ -23,7 +23,7 @@ class GameState(AGameState):
             'fruit': 0
         }
         self.max_points = 0
-        self.fps = 2
+        self.fps = 60
         self.events = []
         self.maze = maze
 

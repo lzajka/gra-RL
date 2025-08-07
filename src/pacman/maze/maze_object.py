@@ -2,24 +2,27 @@ from abc import ABC, abstractmethod
 from typing import List
 from . import Maze
 from typing import Tuple
+from numbers import Number
 from src.general import Drawable
+from decimal import Decimal, ROUND_HALF_UP
 
 
 class MazeObject(Drawable):
     """Klasa abstrakcyjna reprezentująca obiekt znajdujący się w labiryncie.
     """
     character_to_class_mapping = {}
-    def __init__(self, position: tuple[int, int]):
+    def __init__(self, position: tuple[Number, Number]):
         """Inicjalizuje obiekt labiryntu na podstawie jego pozycji.
 
         :param position: Pozycja obiektu w labiryncie w postaci krotki (x, y).
-        :type position: tuple[int, int]
+        :type position: tuple[Decimal, Decimal]
         """
         self.maze = Maze.get_main_instance()
-        self.position = position
+        self.position = Decimal(position[0]), Decimal(position[1])
         self.draw()
         
         self.maze._add_object(self)
+        
 
 
     
@@ -29,24 +32,33 @@ class MazeObject(Drawable):
     def get_csv_header() -> List[str]:
         return []
 
+    def get_precise_position(self) -> tuple[Decimal, Decimal]:
+        """Zwraca dokładną pozycję obiektu. 
+
+        :return: Pozycja obiektu w postaci krotki (x, y).
+        :rtype: tuple[Decimal, Decimal]
+        """
+        return self.position
     
     def get_position(self) -> tuple[int, int]:
-        """Zwraca pozycję obiektu w labiryncie.
+        """Zwraca pozycję obiektu w labiryncie. Pozycja ta jest używana przez logikę aktorów (aktor jest albo przypisany do pola, albo nie)
 
         :return: Pozycja obiektu w postaci krotki (x, y).
         :rtype: tuple[int, int]
         """
-        return self.position
+        return (self.position[0].to_integral_value(ROUND_HALF_UP), 
+                self.position[1].to_integral_value(ROUND_HALF_UP))
+    
 
-    def set_position(self, position: tuple[int, int]):
+    def set_position(self, position: tuple[Decimal, Decimal]):
         """Ustawia pozycję obiektu w labiryncie.
 
         :param position: Nowa pozycja obiektu w postaci krotki (x, y).
-        :type position: tuple[int, int]
+        :type position: tuple[Decimal, Decimal]
         """
         self.erase()
         self.maze._remove_object(self)
-        self.position = position
+        self.position = Decimal(position[0]), Decimal(position[1])
         self.draw()
         self.maze._add_object(self)
 

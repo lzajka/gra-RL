@@ -1,5 +1,6 @@
 from typing import Tuple, List, Dict, Set
 from src.general import Direction
+from decimal import Decimal
 
 class Maze:
     """Klasa przechowująca informacje na temat labiryntu oraz elementów, z których się składa.
@@ -35,15 +36,15 @@ class Maze:
         #return new_maze
             
     @staticmethod
-    def shift_position(origin : Tuple[int, int], direction : Direction, steps: int = 1) -> Tuple[int, int]:
+    def shift_position(origin : Tuple[Decimal, Decimal], direction : Direction, steps: Decimal = 1) -> Tuple[Decimal, Decimal]:
         """Przesuwa pozycję o jeden krok w danym kierunku.
 
         :param origin: Pozycja początkowa w postaci krotki (x, y).
-        :type origin: Tuple[int, int]
+        :type origin: Tuple[Decimal, Decimal]
         :param direction: Kierunek, w którym ma nastąpić przesunięcie.
         :type direction: Direction
         :return: Nowa pozycja po przesunięciu.
-        :rtype: Tuple[int, int]
+        :rtype: Tuple[Decimal, Decimal]
         """
         if direction == Direction.LEFT:
             return (origin[0] - steps, origin[1])
@@ -228,16 +229,15 @@ class Maze:
         
         return [n for n in neighbors if not self.check_wall(n)]
     
-    def is_intersection(self, pos: Tuple[int, int]) -> bool:
+    def is_intersection(self, pos: Tuple[Decimal, Decimal]) -> bool:
         """Sprawdza, czy dana pozycja jest przecięciem w labiryncie.
         UWAGA: Gra nie sprawdza czy pozycje wychodzą poza labirynt, takie zachowanie jest konieczne dla wsparcia portali. Ściany wokół mapy powinny być wystarczające.
 
         :param pos: Pozycja do sprawdzenia.
-        :type pos: Tuple[int, int]
+        :type pos: Tuple[Decimal, Decimal]
         :return: True jeśli pozycja jest przecięciem, False w przeciwnym razie.
         :rtype: bool
         """
-
         if self.check_wall(pos):
             return False
 
@@ -248,7 +248,6 @@ class Maze:
             (pos[0], pos[1] + 1)    # Dół)
         ]
         # jedyne przypadki w których to nie jest przecięcie to: 0011 oraz 1100
-
         walls = [self.check_wall(p) for p in check_positions]
 
         if walls == [False, False, True, True] or walls == [True, True, False, False]:

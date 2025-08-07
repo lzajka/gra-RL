@@ -8,6 +8,7 @@ class Warp(Collidable, MazeObject):
     Ponieważ przydatna będzie możliwość sprawdzania kolizji wykorzystam 
     """
     other_instance : 'Warp' = None
+    disabled_for = set()
 
     def __init__(self, position):
         """Inicjuje Warpa
@@ -47,10 +48,21 @@ class Warp(Collidable, MazeObject):
     
     def _get_named_layer(self):
         return 'map'
+
     
     def on_collision(self, obj):
+        if obj in Warp.disabled_for:
+            Warp.disabled_for.remove(obj)
+            return
+        
         from src.pacman.actors import Actor
         obj : Actor = obj
+        # Chcę się upewnić, że pozycja to liczba całkowita
+        if not (obj.position[0] % 1 == 0 and obj.position[1] % 1 == 0):
+            return
+
+ 
+        Warp.disabled_for.add(obj)
         obj.set_position(self.teleport_position)
         
     
