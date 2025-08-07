@@ -1,4 +1,5 @@
 from pygame.font import SysFont
+from decimal import Decimal
 class GameConfig:
     WINDOW_DIMENSION    = (1000,1000)
     TICKRATE_INITIAL    = 2
@@ -38,3 +39,4 @@ class GameConfig:
     FRUIT_FILLED_RATIO  = 0.5
     WARP_COLOR          = 'lightblue'
     WARP_FILLED_RATIO   = 1
+    BASE_SPEED          = Decimal('0.1')
