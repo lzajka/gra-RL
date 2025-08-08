@@ -5,7 +5,8 @@ from argparse import ArgumentParser
 import pygame
 from .game_state import GameState
 from src.general import Direction
-from src.pacman.maze.spawn_manager import SpawnManager
+from src.pacman.maze.objects import SpawnManager
+from typing import Tuple
 
 class Player(APlayer):
     """Klasa reprezentująca gracza sterowanego przez człowieka
@@ -28,6 +29,20 @@ class Player(APlayer):
         if gc is None:
             gc = GameCore()
         return gc
+    
+    def event_handling(self) -> Tuple[Direction, bool]:
+        events = pygame.event.get()
+        controls = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
+        selected_dir = None
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key in controls:
+                selected_dir = Direction(event.key)
+            elif event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                return [Direction.UP, False]
+        return [selected_dir, True]
+            
+        
+
     
     def make_decision(self, _state):
         """Funkcja podejmująca decyzję na podstawie stanu gry.
@@ -64,13 +79,5 @@ class Player(APlayer):
             SpawnManager.request_spawn(self.clyde)
 
         # Obsługa zdarzeń
-        events = pygame.event.get()
-        controls = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
-        selected_dir = None
-        for event in events:
-            if event.type == pygame.KEYDOWN and event.key in controls:
-                selected_dir = Direction(event.key)
-            elif event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
-                return [selected_dir, False]
 
-        return [selected_dir, True]  # Zwraca None jako kierunek i True jako kontynuację gry
+        return self.event_handling()

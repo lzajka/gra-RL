@@ -1,5 +1,5 @@
 from typing import *
-from src.pacman.maze import MazeObject, Maze
+from src.general.maze import MazeObject, Collidable, Maze
 from abc import ABC, abstractmethod
 from src.general import Direction
 from src.pacman.game_core import GameCore, GameState
@@ -9,7 +9,6 @@ from decimal import Decimal, ROUND_UP, ROUND_HALF_UP
 detected_collisions = deque()
 
 def execute_on_collisions(_):
-    from src.pacman.maze.collidable import Collidable
     while len(detected_collisions) != 0:
         collision : Tuple['Actor', Collidable] = detected_collisions.popleft()
         actor, collidable = collision
@@ -23,7 +22,7 @@ class Actor(MazeObject):
     """
     registered_collision_hooks = False
 
-    def __init__(self, maze : Maze, respawn_interval: int = 0, name: str = "Actor", spawn: Tuple[int, int] = None, base_speed=None):
+    def __init__(self, parent : Maze, respawn_interval: int = 0, name: str = "Actor", spawn: Tuple[int, int] = None, base_speed=None):
         """Inicjalizuje aktora na podstawie punktu startowego i interwału respawnu.
 
         :param Maze maze: Obiekt labiryntu, w którym aktor będzie się poruszał.
@@ -43,16 +42,16 @@ class Actor(MazeObject):
         if base_speed is None:
             base_speed = GameCore.get_main_instance().get_game_config().BASE_SPEED
 
-        self.maze = maze
         self.new_pos = 0
         self.multiplier = Decimal('1.0')
         self.prev_pos = (0,0)
-        super().__init__(spawn)
+        super().__init__(spawn, parent)
         self.respawn_interval = respawn_interval
         self.name = name
         self.direction = Direction.RIGHT
         self.base_speed = base_speed
         self._pause = 0
+        self.in_tunnel = False
     
     def get_spawn_point(self) -> Tuple[int, int]:
         """Zwraca punkt startowy aktora w postaci krotki (x, y).
@@ -61,7 +60,7 @@ class Actor(MazeObject):
         :return: Punkt startowy aktora.
         :rtype: Tuple[int, int]
         """
-        from src.pacman.maze.spawn_manager import SpawnManager
+        from pacman.maze.objects.spawn_manager import SpawnManager
         return SpawnManager._get_spawn_point(self)
     
     def set_speed_multiplier(self, multiplier : Decimal):
@@ -212,7 +211,7 @@ class Actor(MazeObject):
     def _detect_collisions(self, current_state: GameState):
         """Metoda wykrywa i zapisuje wykryte kolizje z innymi obiektami
         """
-        from src.pacman.maze.collidable import Collidable
+        from src.general.maze import Collidable
         global detected_collisions
         maze = self.maze
 
@@ -242,6 +241,11 @@ class Actor(MazeObject):
         :type frames: int
         """
         self._pause = frames
+
+    @abstractmethod
+    def toggle_tunnel(self):
+        pass
+
 
 
     

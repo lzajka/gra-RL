@@ -1,6 +1,6 @@
 from src.general.direction import Direction
 from . import Ghost
-from src.pacman.maze import Maze
+from src.general.maze import Maze
 from typing import Tuple
 
 class Pinky(Ghost):
@@ -9,8 +9,14 @@ class Pinky(Ghost):
 
     def __init__(self, *args, **kwargs):
         kwargs['name'] = 'pinky'
-        super().__init__(*args, **kwargs)
-        Maze.get_main_instance().pinky = self
+        super().__init__(*args, **kwargs)      
+        Pinky.main_instance = self  
+
+    @classmethod 
+    def get_instance(cls):
+        """Zwraca instancję ducha
+        """
+        return cls.main_instance
         
 
     def get_chase_position(self) -> Tuple[int, int]:
@@ -38,16 +44,6 @@ class Pinky(Ghost):
     def copy(self):
         """Tworzy kopię ducha pinky."""
         return None
-    
-    @classmethod
-    def get_instance(cls):
-        """Zwraca instancję pinky'ego.
-
-        :return: Instancja pinky'ego.
-        :rtype: pinky
-        """
-        from src.pacman.maze import Maze
-        return Maze.get_main_instance().pinky
 
     def _get_color(self):
         from src.pacman.game_core import GameCore

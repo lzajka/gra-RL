@@ -1,7 +1,7 @@
 from src.general import AGameState
 from typing import List
 import copy as cpy
-from .maze import Maze
+from src.general.maze import Maze
 from copy import deepcopy
 
 

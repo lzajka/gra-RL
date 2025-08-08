@@ -1,6 +1,6 @@
 from src.general.direction import Direction
 from . import Ghost
-from src.pacman.maze import Maze
+from src.general.maze import Maze
 
 class Clyde(Ghost):
     """Reprezentuje ducha Clyde w grze Pacman.
@@ -8,9 +8,14 @@ class Clyde(Ghost):
 
     def __init__(self, *args, **kwargs):
         kwargs['name'] = 'clyde'
+        Clyde.main_instance = self
         super().__init__(*args, **kwargs)
-        self.maze.clyde = self
         
+    @classmethod 
+    def get_instance(cls):
+        """Zwraca instancję ducha
+        """
+        return cls.main_instance
 
     def get_chase_position(self):
         """Zwraca pozycję chase dla ducha Cylde."""
@@ -37,17 +42,6 @@ class Clyde(Ghost):
     def copy(self):
         """Tworzy kopię ducha Clyde'a."""
         return None
-    
-    
-    @classmethod
-    def get_instance(cls):
-        """Zwraca instancję Clyde'a.
-
-        :return: Instancja Clyde'a.
-        :rtype: Clyde
-        """
-        from src.pacman.maze import Maze
-        return Maze.get_main_instance().clyde
     
     def _get_color(self):
         from src.pacman.game_core import GameCore

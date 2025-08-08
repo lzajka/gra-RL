@@ -1,6 +1,6 @@
 from .actor import Actor
 from src.general.direction import Direction
-from src.pacman.maze import Maze
+from src.general.maze import Maze
 from src.pacman.game_core import GameCore
 
 class Pacman(Actor):
@@ -10,20 +10,14 @@ class Pacman(Actor):
 
     def __init__(self, maze : Maze, respawn_interval: int = 0):
         super().__init__(maze, respawn_interval, "Pacman", (0,0))
-        Maze.get_main_instance().pacman = self
         self.prepicked_direction = Direction.RIGHT
-        
-    
-    @classmethod
+        Pacman.main_instance = self
+
+    @classmethod 
     def get_instance(cls):
-        """Zwraca instancję Pacmana.
-        
-        :return: Instancja Pacmana.
-        :rtype: Pacman
+        """Zwraca instancję Pacmana
         """
-        from src.pacman.maze import Maze
-        return Maze.get_main_instance().pacman
-    
+        return cls.main_instance
 
     def copy(self):
         return None
@@ -92,6 +86,9 @@ class Pacman(Actor):
     
     def on_game_update(self, current_state):
         return super().on_game_update(current_state)
+    
+    def toggle_tunnel(self):
+        pass
     
 
     

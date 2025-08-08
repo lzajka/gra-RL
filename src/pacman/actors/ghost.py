@@ -3,10 +3,11 @@ from .ghost_state import GhostState
 from abc import ABC, abstractmethod
 from src.general import Direction
 from typing import *
-from src.pacman.maze import Maze
+from src.general.maze import MazeObject, Collidable, Maze
 import array
+from decimal import Decimal
 
-class Ghost(Actor):
+class Ghost(Actor, Collidable):
     """Klasa implementująca aktora typu Ghost w grze pacman
     """
 
@@ -14,7 +15,7 @@ class Ghost(Actor):
     
     
 
-    def __init__(self, respawn_interval: int = 0, name: str = "Ghost"):
+    def __init__(self, parent : Maze, respawn_interval: int = 0, name: str = "Ghost"):
         """Inicjalizuje aktora typu Ghost na podstawie punktu startowego i interwału respawnu.
 
         :param respawn_interval: Czas w sekundach po którym aktor zostanie zrespawnowany.
@@ -22,10 +23,11 @@ class Ghost(Actor):
         :param name: Nazwa aktora.
         :type name: str
         """
-        super().__init__(Maze.get_main_instance(), respawn_interval, name, (1,0)) # Ustawiam tak, aby obiekt później został przeniesiony do odpowiedniego miejsca. Tak, czy tak jest to w ścianie.
+        super().__init__(parent, respawn_interval, name, (1,0)) # Ustawiam tak, aby obiekt później został przeniesiony do odpowiedniego miejsca. Tak, czy tak jest to w ścianie.
         Ghost.ghosts.append(self)
-        self._maze = Maze.get_main_instance()
-        self.scatter_pos = self.maze.get_scatter_position(self.name)
+        from src.pacman.maze.objects import ScatterTarget
+        self.scatter_pos = ScatterTarget.get_scatter_target(self.name)
+        self.tunnel_speed = Decimal('1')
         if self.scatter_pos is None:
             raise ValueError(f"Nie ustawiono pozycji scatter dla ducha {self.name}. Upewnij się, że jest zdefiniowana w pliku labiryntu")
 
@@ -170,6 +172,24 @@ class Ghost(Actor):
         # Przywróć poprzednią pozycję
         self.set_position(spawn_pos)
         
+    def on_collision(self, obj):
+        from src.pacman.actors.pacman import Pacman
+        if not isinstance(obj, Pacman):
+            return
+        
+        pacman : Pacman = obj
+        if self.state == GhostState.FRIGHTENED:
+            self.kill()
+        else:
+            pacman.kill()
+
+    def set_tunnel_speed(self, speed: Decimal):
+        self.tunnel_speed = speed
+
+    def toggle_tunnel(self):
+        self.in_tunnel = not self.in_tunnel
+
+
 
             
 

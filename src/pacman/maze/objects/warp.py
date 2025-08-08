@@ -1,5 +1,4 @@
-from .maze_object import MazeObject
-from .collidable import Collidable
+from src.general.maze import MazeObject, Collidable
 from src.pacman.game_core import GameCore
 from typing import Tuple
 
@@ -10,7 +9,7 @@ class Warp(Collidable, MazeObject):
     other_instance : 'Warp' = None
     disabled_for = set()
 
-    def __init__(self, position):
+    def __init__(self, position, parent):
         """Inicjuje Warpa
 
         :param position: Określa punkt, w którym zaczyna się tunel
@@ -20,7 +19,7 @@ class Warp(Collidable, MazeObject):
         cfg = GameCore.get_main_instance().get_game_config()
         self.color = cfg.WARP_COLOR
         self.filled_ratio = cfg.WARP_FILLED_RATIO
-        super().__init__(position)
+        super().__init__(position, parent)
         
         if Warp.other_instance is not None:
             self._link_warp(Warp.other_instance)

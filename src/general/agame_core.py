@@ -81,7 +81,6 @@ class AGameCore(ABC):
     @abstractmethod
     def quit(self):
         pass    
-
     # Funkcje rysownicze
 
     def display_text(self, position : Tuple[int, int], text, font_size = 12, font = None, foreground = 'white'):

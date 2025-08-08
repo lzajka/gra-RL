@@ -1,23 +1,24 @@
 from abc import ABC, abstractmethod
 from typing import List
+
 from . import Maze
 from typing import Tuple
 from numbers import Number
 from src.general import Drawable
 from decimal import Decimal, ROUND_HALF_UP
-
+import importlib
 
 class MazeObject(Drawable):
     """Klasa abstrakcyjna reprezentująca obiekt znajdujący się w labiryncie.
     """
     character_to_class_mapping = {}
-    def __init__(self, position: tuple[Number, Number]):
+    def __init__(self, position: tuple[Number, Number], parent : Maze):
         """Inicjalizuje obiekt labiryntu na podstawie jego pozycji.
 
         :param position: Pozycja obiektu w labiryncie w postaci krotki (x, y).
         :type position: tuple[Decimal, Decimal]
         """
-        self.maze = Maze.get_main_instance()
+        self.maze = parent
         self.position = Decimal(position[0]), Decimal(position[1])
         self.draw()
         
@@ -90,21 +91,21 @@ class MazeObject(Drawable):
         raise NotImplementedError("Metoda copy nie jest zaimplementowana.")
 
     @classmethod
-    def create_obj_based_on_char(cls, char : str, pos : Tuple[int, int]) -> 'MazeObject':
+    def create_obj_based_on_char(cls, char : str, pos : Tuple[int, int], parent : Maze) -> 'MazeObject':
         """Funkcja zwracająca obiekt labiryntu na podstawie znaku.
 
         :param char: Znak reprezentujący obiekt.
         :type char: str
         :param pos: Pozycja obiektu w labiryncie w postaci krotki (x, y).
         :type pos: tuple[int, int]
+        :param parent: Obiekt labiryntu, do którego należy nowy obiekt.
+        :type parent: Maze
         :return: Obiekt labiryntu odpowiadający znakowi.
         :rtype: MazeObject
         """
-        from . import wall, spawn_manager, point, scatter_target, warp
-
-        child = cls.character_to_class_mapping.get(char)
+        child = cls.character_to_class_mapping.get(char) 
         if child is None:
             return None
         
-        return child(pos)
+        return child(pos, parent)
         

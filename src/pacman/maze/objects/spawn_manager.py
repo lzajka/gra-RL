@@ -1,7 +1,5 @@
-from .maze_object import MazeObject
-from src.pacman.game_core import GameCore
-from .maze import Maze
-from src.pacman.actors.actor import Actor
+from src.general.maze import Maze, MazeObject
+from src.pacman.actors import Actor
 from abc import abstractmethod
 from typing import Tuple, Dict
 from logging import getLogger
@@ -11,13 +9,13 @@ class SpawnManager(MazeObject):
     """
     
 
-    def __init__(self, pos):
+    def __init__(self, pos, parent):
         """Inicjalizuje instancję klasy SpawnManager.
         
         :param pos: Pozycja, w której ma zostać zainicjalizowany SpawnManager.
         :type pos: tuple[int, int]
         """
-        super().__init__(pos)
+        super().__init__(pos, parent)
 
     @classmethod
     def set_pacman_spawn(cls, spawn: Tuple[int, int]):
@@ -39,6 +37,7 @@ class SpawnManager(MazeObject):
 
     @classmethod
     def request_spawn(cls, actor : Actor):
+        from src.pacman.game_core import GameCore
         """Prosi o zrespawnowanie aktora w odpowiednim punkcie odradzania.
         :param actor: Aktor, który ma zostać zrespawnowany.
         :type actor: Actor
@@ -55,6 +54,7 @@ class SpawnManager(MazeObject):
 
     @classmethod
     def _try_spawn(cls, actor : Actor):
+        from src.pacman.game_core import GameCore
         """Próbuje zrespawnować aktora w odpowiednim punkcie odradzania.
         :param actor: Aktor, który ma zostać zrespawnowany.
         :type actor: Actor
@@ -120,7 +120,7 @@ class _PacmanSpawner(SpawnManager):
     """Klasa reprezentująca punkt odradzania Pacmana w labiryncie.
     Nie należy jej wywoływać do tworzenia Pacmana, do tego służy klasa SpawnManager.
     """
-    def __init__(self, position):
+    def __init__(self, position, parent):
         self.set_pacman_spawn(position)
     
     def draw(self):
@@ -131,12 +131,14 @@ class _GhostSpawner(SpawnManager):
     """Klasa reprezentująca punkt odradzania duchów w labiryncie.
     Nie należy jej wywoływać do tworzenia duchów, do tego służy klasa SpawnManager.
     """
-    def __init__(self, position):
+    def __init__(self, position, parent):
         self.set_ghost_spawn(position)
 
     def _get_color(self):
+        from src.pacman.game_core import GameCore
         return GameCore.get_main_instance().get_game_config().GHOST_SPAWNER_COLOR
     def _get_filled_ratio(self):
+        from src.pacman.game_core import GameCore
         return GameCore.get_main_instance().get_game_config().GHOST_SPAWNER_FILLED_RATIO
     def _get_named_layer(self):
         return 'map'

@@ -3,18 +3,18 @@ from .game_config import GameConfig
 from .game_state import GameState
 from copy import deepcopy
 from src.general import Direction
-from src.pacman.maze import Maze
+from src.general.maze import Maze, UsesMaze
 from queue import Queue
 import pygame
 HOOK_PRIORITY_COUNT = 10
 
-class GameCore(AGameCore):
+class GameCore(AGameCore, UsesMaze):
     _main_instance = None
     
 
     def __init__(self):
+        import src.pacman.maze.objects
         self.config = self.get_default_config()
-
         super().__init__(self.config.WINDOW_DIMENSION, [
             'background',
             'map',
@@ -25,10 +25,13 @@ class GameCore(AGameCore):
         if self.__class__._main_instance is not None:
             raise RuntimeError('Tylko jedna instancja gry może istnieć w danym czasie.')
         self.__class__._main_instance = self
-        self.maze : Maze = None
+        GameCore.maze : Maze = None
         self.game_state : GameState = None
         self.free_hooks = []
 
+    @classmethod
+    def get_maze(cls):
+        return cls.maze
 
     @classmethod
     def get_main_instance(cls) -> 'GameCore':
@@ -77,7 +80,7 @@ class GameCore(AGameCore):
         if self.cell_size is None:
             # Ponieważ self.maze jeszcze nie jest ustawione, wykorzystam Maze.get_main_instance()
 
-            self.cell_size = self.config.WINDOW_DIMENSION[0] // Maze.get_main_instance().get_size()[0]
+            self.cell_size = self.config.WINDOW_DIMENSION[0] // self.maze.get_size()[0]
         return self.cell_size
 
     def get_current_state(self):

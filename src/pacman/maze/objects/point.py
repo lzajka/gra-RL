@@ -1,20 +1,18 @@
-from .maze_object import MazeObject
+from src.general.maze import MazeObject, Collidable
 from src.pacman.game_config import GameConfig
-from .collidable import Collidable
 
 class Point(MazeObject, Collidable):
     """Reprezentuje punktu w labiryncie Pacmana.
     Ściana jest obiektem statycznym, który nie zmienia swojej pozycji ani stanu w trakcie gry.
     """
 
-    def __init__(self, position: tuple[int, int]):
+    def __init__(self, position: tuple[int, int], parent):
         """Inicjalizuje obiekt ściany na podstawie jego pozycji.
 
         :param position: Pozycja ściany w labiryncie w postaci krotki (x, y).
         :type position: tuple[int, int]
         """
-        super().__init__(position)
-        from src.pacman.maze import Maze
+        super().__init__(position, parent)
     
     def _draw(self):
         """Metoda zwracająca reprezentację obiektu w formie graficznej."""

@@ -4,6 +4,7 @@ from decimal import Decimal
 
 class Maze:
     """Klasa przechowująca informacje na temat labiryntu oraz elementów, z których się składa.
+    Labirynt to plansza 2D na której
     """
     def __init__(self):
         """Inicjalizuje labirynt na podstawie pliku.
@@ -14,12 +15,6 @@ class Maze:
         self.size = (0, 0)  # Rozmiar labiryntu w postaci krotki (szerokość, wysokość)
         
         self.objects_at : Dict[Tuple[int, int], Set] = {}  # Słownik przechowujący obiekty w labiryncie
-        self.inky = None
-        self.blinky = None
-        self.pinky = None
-        self.clyde = None
-        self.pacman = None
-        self.scatter_positions = {}
     
     def copy(self) -> 'Maze':
         """Tworzy i zwraca kopię labiryntu.
@@ -73,7 +68,7 @@ class Maze:
                 line = line.strip()
                 pos[0] = 0
                 for char in line:
-                    MazeObject.create_obj_based_on_char(char, tuple(pos))
+                    MazeObject.create_obj_based_on_char(char, tuple(pos), self)
                     pos[0] += 1
                 pos[1] += 1
 
@@ -87,29 +82,6 @@ class Maze:
         """
         
         return self.objects_at.values()
-    
-    def set_scatter_position(self, ghost_name: str, position: Tuple[int, int]):
-        """Ustawia pozycję scatter dla danego ducha.
-
-        :param ghost_name: Nazwa ducha, dla którego ustawiana jest pozycja scatter.
-        :type ghost_name: str
-        :param position: Pozycja scatter w postaci krotki (x, y).
-        :type position: Tuple[int, int]
-        """
-        self.scatter_positions[ghost_name] = position
-
-    def get_scatter_position(self, ghost_name: str) -> Tuple[int, int]:
-        """Zwraca pozycję scatter dla danego ducha.
-
-        :param ghost_name: Nazwa ducha, dla którego chcemy uzyskać pozycję scatter.
-        :type ghost_name: str
-        :return: Pozycja scatter w postaci krotki (x, y).
-        :rtype: Tuple[int, int]
-        """
-        pos =  self.scatter_positions.get(ghost_name, None)
-        if pos is None:
-            raise ValueError(f"Nie znaleziono pozycji scatter dla ducha: {ghost_name}")
-        return pos
 
     def get_objects_at(self, pos : Tuple[int,int]):
         """Zwraca zbiór obiektów znajdujących się w danym miejscu labiryntu.
@@ -130,24 +102,12 @@ class Maze:
         :return: True jeśli w danej pozycji znajduje się ściana, False w przeciwnym razie.
         :rtype: bool
         """
-        from .wall import Wall
+        from src.pacman.maze.objects import Wall
         objs : Set = self.objects_at.get(pos, set())
         for obj in objs:
             if isinstance(obj, Wall):
                 return True
         return False
-    
-    def get_wall_near_corner(self, corner : str) -> Tuple[int, int]:
-        """Zwraca pozycję ściany znajdującej się w pobliżu danego rogu labiryntu, ale nie kolidującej z brzegiem labiryntu.
-
-        :param corner: Nazwa rogu, dla którego chcemy znaleźć ścianę (np. "top-left", "top-right", "bottom-left", "bottom-right").
-        :type corner: str
-        :return: Pozycja ściany w postaci krotki (x, y).
-        :rtype: Tuple[int, int]
-        """
-
-        raise NotImplementedError("TODO")
-
     
     def get_size(self) -> Tuple[int, int]:
         """Zwraca rozmiar labiryntu.
@@ -199,17 +159,6 @@ class Maze:
         :type obj: MazeObject
         """
         self.objects_at[obj.get_position()].remove(obj)
-    
-    @classmethod
-    def get_main_instance(cls) -> 'Maze':
-        """Zwraca główną instancję labiryntu.
-
-        :return: Główna instancja labiryntu.
-        :rtype: Maze
-        """
-        from src.pacman.game_core import GameCore
-
-        return GameCore.get_main_instance().maze
     
     def get_neighbors(self, pos: Tuple[int, int]) -> List[Tuple[int, int]]:
         """Zwraca listę sąsiadujących pozycji w labiryncie.
