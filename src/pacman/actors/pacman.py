@@ -25,7 +25,7 @@ class Pacman(Actor):
         if level == 1:
             if state == SpeedStatusEffect.NORM: return Decimal('0.8')
             elif state == SpeedStatusEffect.FRIGHT: return ('0.9')
-            elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.4')
+            elif state == SpeedStatusEffect.TUNNELING: return None
         elif 2 <= level <= 4:
             if state == SpeedStatusEffect.NORM: return Decimal('0.9')
             elif state == SpeedStatusEffect.FRIGHT: return Decimal('0.95')
