@@ -181,7 +181,7 @@ class Ghost(Actor, Collidable):
 
     def on_spawn(self):
         super().on_spawn()
-        self.set_state(GhostState.SCATTEr)      # Domyślny stan to SCATTER
+        self.set_state(GhostState.SCATTER)      # Domyślny stan to SCATTER
 
         # Zrób tak aby duch decydował na pozycji spawnowej
         self.direction = Direction.RIGHT
