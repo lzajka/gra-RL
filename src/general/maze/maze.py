@@ -2,6 +2,9 @@ from typing import Tuple, List, Dict, Set
 from src.general import Direction
 from decimal import Decimal
 
+PrecisePosition = Tuple[Decimal, Decimal]
+Position = Tuple[int, int]
+
 class Maze:
     """Klasa przechowująca informacje na temat labiryntu oraz elementów, z których się składa.
     Labirynt to plansza 2D na której
@@ -109,6 +112,29 @@ class Maze:
                 return True
         return False
     
+    @staticmethod
+    def to_center_pos(pos: PrecisePosition) -> PrecisePosition:
+        """Zwraca środkową pozycję dla danego bloku.
+
+        :param pos: Pozycja bloku w postaci krotki (x, y). Pozycja ta opisuje lewy-górny róg.
+        :type pos: PrecisePosition
+        :return: Środkowa pozycja bloku w postaci krotki (x, y).
+        :rtype: PrecisePosition
+        """
+        return (pos[0] + Decimal('0.5'), pos[1] + Decimal('0.5'))
+    
+    @staticmethod
+    def to_corner_pos(pos: PrecisePosition) -> PrecisePosition:
+        """Zwraca narożną pozycję dla danego bloku.
+
+        :param pos: Pozycja bloku w postaci krotki (x, y). Pozycja ta opisuje środek.
+        :type pos: PrecisePosition
+        :return: Narożna pozycja bloku w postaci krotki (x, y).
+        :rtype: PrecisePosition
+        """
+        return (pos[0] - Decimal('0.5'), pos[1] - Decimal('0.5'))
+    
+
     def get_size(self) -> Tuple[int, int]:
         """Zwraca rozmiar labiryntu.
 

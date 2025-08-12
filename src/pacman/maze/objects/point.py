@@ -43,7 +43,7 @@ class Point(MazeObject, Collidable):
     def get_point_type(self):
         return 'point'
 
-    def on_collision(self, obj):
+    def on_enter(self, obj):
         from src.pacman.actors.pacman import Pacman
         from src.pacman.game_state import GameState
         gs = GameState.get_main_instance()

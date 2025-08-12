@@ -26,6 +26,8 @@ class GameState(AGameState):
         self.fps = 60
         self.events = []
         self.maze = maze
+        self.level = 1
+        self.round = 0
 
     def to_training_array(self) -> List[float]:
         """Zwraca stan gry jako tablicę do treningu.
@@ -49,6 +51,8 @@ class GameState(AGameState):
         #gsc.remaining_points = self.remaining_points
         gsc.max_points = self.max_points
         gsc.fps = self.fps
+        gsc.round = self.round
+        gsc.level = self.level
 
     def to_list(self):
         return [

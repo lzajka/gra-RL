@@ -3,6 +3,11 @@ from .maze_object import MazeObject
 
 class Collidable(ABC):
 
-    @abstractmethod
-    def on_collision(self, obj : MazeObject):
+    def on_enter(self, obj : MazeObject):
+        pass
+
+    def on_exit(self, obj : MazeObject):
+        pass
+
+    def on_continue(self, obj : MazeObject):
         pass

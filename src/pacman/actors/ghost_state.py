@@ -1,9 +1,9 @@
 from enum import Enum
 
-class GhostState(Enum):
+class GhostState(Enum):    
     """Enum reprezentujący stany ducha w grze Pacman.
     """
-    CHASE = "CHASE"
-    SCATTER = "SCATTER"
-    FRIGHTENED = "FRIGHTENED"
-    NOT_SPAWNED = "NOT_SPAWNED"
+    CHASE = "chase"
+    SCATTER = "scatter"
+    FRIGHTENED = "frightened"
+    EATEN = "eaten"

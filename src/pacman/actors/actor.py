@@ -4,16 +4,37 @@ from abc import ABC, abstractmethod
 from src.general import Direction
 from src.pacman.game_core import GameCore, GameState
 from collections import deque
-from decimal import Decimal, ROUND_UP, ROUND_HALF_UP
-
-detected_collisions = deque()
+from decimal import Decimal, ROUND_DOWN
+from .status_effects import SpeedStatusEffect
+from src.general.utils import TupleOperations
+from src.general.maze import PrecisePosition, Position
+detected_collisions = set()
+detected_last_time = set()
 
 def execute_on_collisions(_):
-    while len(detected_collisions) != 0:
-        collision : Tuple['Actor', Collidable] = detected_collisions.popleft()
-        actor, collidable = collision
-        collidable.on_collision(actor)
+    global detected_collisions, detected_last_time
 
+    # Sprawdź które wyszły z kolizji
+    exited = detected_last_time - detected_collisions
+    entered = detected_collisions - detected_last_time
+
+    for c in exited:
+        collision : Tuple['Actor', Collidable] = c
+        actor, collidable = collision
+        collidable.on_exit(actor)
+    
+    for c in entered:
+        collision : Tuple['Actor', Collidable] = c
+        actor, collidable = collision
+        collidable.on_enter(actor)
+    
+    for c in detected_collisions:
+        collision : Tuple['Actor', Collidable] = c
+        actor, collidable = collision
+        collidable.on_continue(actor)
+
+    detected_last_time = detected_collisions.copy()
+    detected_collisions.clear()
     
 
 class Actor(MazeObject):
@@ -44,15 +65,67 @@ class Actor(MazeObject):
 
         self.new_pos = 0
         self.multiplier = Decimal('1.0')
-        self.prev_pos = (0,0)
         super().__init__(spawn, parent)
         self.respawn_interval = respawn_interval
         self.name = name
         self.direction = Direction.RIGHT
         self.base_speed = base_speed
         self._pause = 0
-        self.in_tunnel = False
+        self.prev_pos = (Decimal(-1), Decimal(-1))
+        self.status_effects = dict()
+        self.apply_speed_status_effect(SpeedStatusEffect.NORM)
+
+
+    @abstractmethod
+    def get_status_effect_speed_modifier(self, state : SpeedStatusEffect, level) -> Decimal:
+        pass
     
+    def apply_speed_status_effect(self, state: SpeedStatusEffect):
+        """Ustawia stan aktora.
+
+        :param state: Stan aktora do ustawienia.
+        :type state: ActorState
+        """
+        gs : GameState = GameState.get_main_instance()
+        level = gs.level
+        speed_modifier = self.get_status_effect_speed_modifier(state, level)
+
+        if speed_modifier is None:
+            # Zwracając None informuje, że dany stan nie występuje
+            return
+        
+        self.status_effects[state] = speed_modifier
+        self.set_speed_multiplier(speed_modifier)
+    
+    def clear_status_effect(self, state : SpeedStatusEffect):
+        """Czyści stan aktora."""
+        if state == SpeedStatusEffect.NORM:
+            raise ValueError("Nie można usunąć stanu NORM. Jest on stanem podstawowym, na który nakładane są poszczególne stany.")
+        
+        if state not in self.status_effects:
+            return
+        
+        del self.status_effects[state]
+
+        slowest = Decimal('1.0')  # Ustawiam na maksymalną prędkość
+        # Wybierz najmniejszą prędkość
+        for speed in self.status_effects.values():
+            if speed < slowest:
+                slowest = speed
+
+        self.set_speed_multiplier(slowest)
+
+    def toggle_status_effect(self, state : SpeedStatusEffect):
+        """Przełącza stan prędkości aktora.
+
+        :param state: Stan prędkości do przełączenia.
+        :type state: SpeedStatusEffect
+        """
+        if state in self.status_effects:
+            self.clear_status_effect(state)
+        else:
+            self.apply_speed_status_effect(state)
+
     def get_spawn_point(self) -> Tuple[int, int]:
         """Zwraca punkt startowy aktora w postaci krotki (x, y).
         :param maze: Obiekt labiryntu, w którym aktor będzie się poruszał.
@@ -128,53 +201,159 @@ class Actor(MazeObject):
         """
         pass
 
-    def on_hit_wall(self, current_pos : Tuple[Decimal,Decimal], next_pos: Tuple[Decimal, Decimal]) -> Tuple[Decimal, Decimal]:
+    def on_hit_wall(self, current_pos : PrecisePosition, next_pos: PrecisePosition, wall_hit : Position) -> PrecisePosition:
         """Metoda wywoływana, gdy aktor próbuje przejść przez ścianę.
-        Domyślnie w tym wypadku aktor jest zatrzymywany i nie zmienia swojej pozycji.
+        Domyślnie, w tym wypadku wybrana jest pozycja najbardziej zbliżona do ściany, znajdująca się w linii między current_pos a next_pos.
 
         :param current_pos: Aktualna pozycja aktora.
-        :type current_pos: Tuple[Decimal, Decimal]
+        :type current_pos: PrecisePosition
         :param next_pos: Pozycja, do której aktor próbuje się udać.
-        :type next_pos: Tuple[Decimal, Decimal]
+        :type next_pos: PrecisePosition
+        :param wall_hit: Pozycja ściany, w którą aktor uderzył.
+        :type wall_hit: Position
         """
+        from decimal import ROUND_DOWN
+        cnext_pos = Maze.to_center_pos(next_pos)
+        cwall = Maze.to_center_pos(wall_hit)
 
-        return current_pos
+        is_colliding = [(cn - cw).copy_abs() < 1 for (cn, cw) in zip(cnext_pos, cwall)]
+        was_changed = [a != b for (a, b) in zip(current_pos, next_pos)]
 
-    def get_next_step(self) -> Tuple[Decimal, Decimal]:
+        ret = [None, None]
+        for i in range(2):
+            if is_colliding[i] and was_changed[i]:
+                ret[i] = cnext_pos[i].to_integral_value(ROUND_DOWN)
+            else:
+                ret[i] = next_pos[i]
+            
+
+        return tuple(ret)
+    
+    @staticmethod
+    def _get_path_center_block(current_pos: PrecisePosition, next_pos: PrecisePosition) -> PrecisePosition:
+        """Zwraca blok centralny ścieżki między dwoma pozycjami.
+
+        :param current_pos: Aktualna pozycja aktora.
+        :type current_pos: PrecisePosition
+        :param next_pos: Następna pozycja aktora.
+        :type next_pos: PrecisePosition
+        :return: Pozycja bloku centralnego ścieżki.
+        :rtype: Position
+        """
+        path_center = TupleOperations.divide_by_scalar(TupleOperations.add_tuples(current_pos, next_pos), Decimal(2))
+        path_center_block = TupleOperations.round_tuple(path_center)
+        return int(path_center_block[0]), int(path_center_block[1])
+
+
+    def _check_if_intersection_crossed(self, current_pos : PrecisePosition, next_pos : PrecisePosition) -> Decimal:
+        """Sprawdza czy następny ruch aktora spowoduje przekroczenie skrzyżowania. Jeżeli tak zwraca ile przekroczył.
+
+
+        :param current_pos: Aktualna pozycja aktora.
+        :type current_pos: PrecisePosition
+        :param next_pos: Następna pozycja aktora.
+        :type next_pos: PrecisePosition
+        :return: Liczba nieujemna jeżeli przekroczył, jeżeli nie przekroczył to -1. 
+        :rtype: Decimal.
+        """
+        offset = TupleOperations.subtract_tuples(next_pos, current_pos)
+        # To działa jedynie wtedy jeżeli aktor porusza się w jednym kierunku. Dodatkowo to sprawdzam.
+        if offset[0] != 0 and offset[1] != 0:
+            raise ValueError("Aktor może poruszać się tylko w jednym kierunku.")
+
+
+        # Sprawdź który blok może aktywować
+        path_center_block = Actor._get_path_center_block(current_pos, next_pos)
+        if not self.maze.is_intersection(path_center_block): return Decimal(-1)
+
+        # Spr
+
+        # Oblicz dystansy
+        distance_from_center = sum(TupleOperations.subtract_tuples(path_center_block, current_pos))
+        distance_traversed = sum(TupleOperations.subtract_tuples(next_pos, current_pos))
+        
+        if distance_from_center < 0:
+            distance_from_center = -distance_from_center
+            distance_traversed = -distance_traversed
+
+        # Sprawdź czy przeszedł przez środek środek
+        if distance_traversed >= distance_from_center:
+            return distance_traversed - distance_from_center
+        else:
+            return Decimal(-2)
+
+
+    def get_next_step(self, position : Position = None, precise_position : PrecisePosition = None, jump : Decimal = None, depth = 0) -> Tuple[Decimal, Decimal]:
         """Zwraca następny krok aktora w postaci krotki (x, y).
         Respektuje metodę pause
 
+        :param position: Pozycja, z której aktor ma się poruszyć. Jeżeli nie podano, to używana jest aktualna pozycja.
+        :type position: Position
+        :param precise_position: Dokładna pozycja, z której aktor ma się poruszyć. Jeżeli nie podano, to używana jest aktualna dokładna pozycja.
+        :type precise_position: PrecisePosition
+        :param jump: Długość skoku aktora. Jeżeli nie podano, to używana jest aktualna długość skoku. Długość skoku musi być < 1.
+        :type jump: Decimal
+        :param depth: Głębokość rekurencji.
+        :type depth: int
         :return: Następny krok w postaci krotki (x, y).
         :rtype: Tuple[float, float]
         """
-        pos = self.get_position()
-        prec_pos = self.get_precise_position()
+        if position is None:
+            position = self.get_position()
+        if precise_position is None:
+            precise_position = self.get_precise_position()
+        if jump is None:
+            jump = self.get_speed()
 
-        is_intersection = self.maze.is_intersection(pos)
-        is_in_center = prec_pos[0] % Decimal(1) == 0 and prec_pos[1] % Decimal(1) == 0
+        if jump >= 1: 
+            raise ValueError("Długość skoku musi być mniejsza niż 1. Obecna długość skoku: {}".format(jump))
+
+        future_pos = Maze.shift_position(precise_position, self.direction, jump)
+        next_block = Maze.shift_position(position, self.direction)
+
+        if self._pause > 0 and depth == 0:
+            self._pause -= 1
+            return precise_position
+        # Jeżeli aktor uderzył w ścianę, to zatrzymujemy go
+        ## Najpierw sprawdzamy czy dotyka następnego pola
+
+        cfuture_pos = Maze.to_center_pos(future_pos)
+        cnext_block = Maze.to_center_pos(next_block)
+
+        is_touching = (cfuture_pos[0] - cnext_block[0]).copy_abs() < 1 or (cfuture_pos[1] - cnext_block[1]).copy_abs() < 1
+
+
+
+        # Jeżeli już było wykonywane dalszej części nie należy sprawdzać
+
+        # Obsłuż zmiany kierunków
+
+        intersection_crossed = self._check_if_intersection_crossed(precise_position, future_pos)
+
+        if intersection_crossed >= 0 and depth == 0:
+            intersection_pos = Actor._get_path_center_block(precise_position, future_pos)
+            self.on_intersection()
+        if intersection_crossed > 0 and depth == 0:
+            return self.get_next_step(intersection_pos, tuple([Decimal(intersection_pos[0]), Decimal(intersection_pos[1])]), intersection_crossed, depth + 1)
 
         
-        if is_intersection and is_in_center:
-           self.on_intersection()
-        future_pos = Maze.shift_position(prec_pos, self.direction, self.get_speed())
-        next_block = Maze.shift_position(pos, self.direction)
-        if self.maze.check_wall(next_block) and is_in_center:
-            future_pos = self.on_hit_wall(prec_pos, future_pos)
-        future_pos[1].to_integral_value
+        if self.maze.check_wall(next_block) and is_touching:
+            future_pos = self.on_hit_wall(precise_position, future_pos, next_block)
+
+        # Dodatkowo jeżeli stoi na skrzyżowaniu wykonuj on_intersection
+        if self.maze.is_intersection(position) and depth == 0 and future_pos == position:
+            self.on_intersection()
+
         # Ponieważ duch musi myśleć o 1 krok do przodu, to jeżeli następnym krokiem będzie skrzyżowanie, to wybieramy kierunek.
         # Aby to zrobić w ostatniej chwili sprawdzam, czy następna pozycja znajduje się w innym bloku
-        future_block = (future_pos[0].to_integral_value(ROUND_HALF_UP), future_pos[1].to_integral_value(ROUND_HALF_UP))
-        is_about_to_change_block = future_block != pos
+        future_block = TupleOperations.round_tuple(future_pos)
 
-        if self._pause > 0:
-            self._pause -= 1
-            return prec_pos
+        is_about_to_change_block = future_block != position
 
-        if is_about_to_change_block and self.maze.is_intersection(future_block):
+        if is_about_to_change_block and depth == 0 and self.maze.is_intersection(future_block):
             self.select_future_direction()
 
         return future_pos
-
     def kill(self):
         """Metoda wywoływana przy śmierci aktora.
         Domyślnie ustawia kierunek na prawo i uruchamia respawn.
@@ -221,7 +400,7 @@ class Actor(MazeObject):
         for object in objects:
             # Sprawdź czy z objektem można zajść w kolizję i upewnij się że ten obiekt jest inny niż obecny
             if isinstance(object, Collidable) and id(object) != id(self):
-                detected_collisions.append((self, object))
+                detected_collisions.add((self, object))
         
 
     def _get_filled_ratio(self):
@@ -241,10 +420,6 @@ class Actor(MazeObject):
         :type frames: int
         """
         self._pause = frames
-
-    @abstractmethod
-    def toggle_tunnel(self):
-        pass
 
 
 

@@ -2,6 +2,7 @@ from .actor import Actor
 from src.general.direction import Direction
 from src.general.maze import Maze
 from src.pacman.game_core import GameCore
+from decimal import Decimal
 
 class Pacman(Actor):
     """Klasa reprezentująca Pacmana, dziedzicząca po klasie Actor.
@@ -18,6 +19,25 @@ class Pacman(Actor):
         """Zwraca instancję Pacmana
         """
         return cls.main_instance
+    
+    def get_status_effect_speed_modifier(self, state, level):
+        from src.pacman.actors import SpeedStatusEffect
+        if level == 1:
+            if state == SpeedStatusEffect.NORM: return Decimal('0.8')
+            elif state == SpeedStatusEffect.FRIGHT: return ('0.9')
+            elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.4')
+        elif 2 <= level <= 4:
+            if state == SpeedStatusEffect.NORM: return Decimal('0.9')
+            elif state == SpeedStatusEffect.FRIGHT: return Decimal('0.95')
+            elif state == SpeedStatusEffect.TUNNELING: return None
+        elif 5 <= level <= 20:
+            if state == SpeedStatusEffect.NORM: return Decimal('1')
+            elif state == SpeedStatusEffect.FRIGHT: return Decimal('1')
+            elif state == SpeedStatusEffect.TUNNELING: return None
+        else:
+            if state == SpeedStatusEffect.NORM: return Decimal('0.9')
+            elif state == SpeedStatusEffect.FRIGHT: return None
+            elif state == SpeedStatusEffect.TUNNELING: return None
 
     def copy(self):
         return None
@@ -29,15 +49,15 @@ class Pacman(Actor):
         :return: Pozycja celu w postaci krotki (x, y).
         :rtype: Tuple[int, int]
         """
-
+        pos = self.get_position()
         if self.direction == Direction.LEFT:
-            self.target = (self.position[0] - 1, self.position[1])
+            self.target = (pos[0] - 1, pos[1])
         elif self.direction == Direction.RIGHT:
-            self.target =(self.position[0] + 1, self.position[1])
+            self.target = (pos[0] + 1, pos[1])
         elif self.direction == Direction.UP:
-            self.target = (self.position[0], self.position[1] - 1)
+            self.target = (pos[0], pos[1] - 1)
         elif self.direction == Direction.DOWN:
-            self.target = (self.position[0], self.position[1] + 1)
+            self.target = (pos[0], pos[1] + 1)
         return self.target
 
     

@@ -1,13 +1,15 @@
 from src.general.maze import MazeObject, Collidable
 from src.pacman.game_core import GameCore
 from typing import Tuple
+from src.general.maze import PrecisePosition
+from src.general.utils.tuple_operations import TupleOperations
 
 class Warp(Collidable, MazeObject):
     """Reprezentacja portalu w labiryncie Pacmana.
     Ponieważ przydatna będzie możliwość sprawdzania kolizji wykorzystam 
     """
     other_instance : 'Warp' = None
-    disabled_for = set()
+    just_teleported = set()
 
     def __init__(self, position, parent):
         """Inicjuje Warpa
@@ -15,7 +17,7 @@ class Warp(Collidable, MazeObject):
         :param position: Określa punkt, w którym zaczyna się tunel
         :type position: Tuple[int, int]
         """
-        self.teleport_position : Tuple[int, int] = None
+        self.teleport_offset : PrecisePosition = None
         cfg = GameCore.get_main_instance().get_game_config()
         self.color = cfg.WARP_COLOR
         self.filled_ratio = cfg.WARP_FILLED_RATIO
@@ -33,7 +35,9 @@ class Warp(Collidable, MazeObject):
         :param other_warp: Inny warp.
         :type other_warp: Warp
         """
-        self.teleport_position = other_warp.get_position()
+        other = other_warp.get_precise_position()
+        me = self.get_precise_position()
+        self.teleport_offset = TupleOperations.subtract_tuples(other, me)
 
     def _get_color(self):
         return self.color
@@ -47,22 +51,20 @@ class Warp(Collidable, MazeObject):
     
     def _get_named_layer(self):
         return 'map'
-
     
-    def on_collision(self, obj):
-        if obj in Warp.disabled_for:
-            Warp.disabled_for.remove(obj)
-            return
-        
+
+
+    def on_enter(self, obj):        
         from src.pacman.actors import Actor
         obj : Actor = obj
         # Chcę się upewnić, że pozycja to liczba całkowita
-        if not (obj.position[0] % 1 == 0 and obj.position[1] % 1 == 0):
-            return
-
- 
-        Warp.disabled_for.add(obj)
-        obj.set_position(self.teleport_position)
+        if obj not in Warp.just_teleported:
+            Warp.just_teleported.add(obj)
+            new_pos = obj.get_precise_position()
+            new_pos = TupleOperations.add_tuples(new_pos, self.teleport_offset)
+            obj.set_position(new_pos)
+        else:
+            Warp.just_teleported.remove(obj)
         
     
 MazeObject.character_to_class_mapping['W'] = Warp

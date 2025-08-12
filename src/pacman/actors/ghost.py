@@ -26,10 +26,32 @@ class Ghost(Actor, Collidable):
         super().__init__(parent, respawn_interval, name, (1,0)) # Ustawiam tak, aby obiekt później został przeniesiony do odpowiedniego miejsca. Tak, czy tak jest to w ścianie.
         Ghost.ghosts.append(self)
         from src.pacman.maze.objects import ScatterTarget
+        self._state = GhostState.SCATTER
         self.scatter_pos = ScatterTarget.get_scatter_target(self.name)
-        self.tunnel_speed = Decimal('1')
         if self.scatter_pos is None:
             raise ValueError(f"Nie ustawiono pozycji scatter dla ducha {self.name}. Upewnij się, że jest zdefiniowana w pliku labiryntu")
+
+    def get_status_effect_speed_modifier(self, state, level):
+        from .status_effects import SpeedStatusEffect
+        if level == 1:
+            if state == SpeedStatusEffect.NORM: return Decimal('0.75')
+            elif state == SpeedStatusEffect.FRIGHT: return Decimal('0.50')
+            elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.4')
+        elif 2 <= level <= 4:
+            if state == SpeedStatusEffect.NORM: return Decimal('0.85')
+            elif state == SpeedStatusEffect.FRIGHT: return Decimal('0.55')
+            elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.45')
+        elif 5 <= level <= 20:
+            if state == SpeedStatusEffect.NORM: return Decimal('0.95')
+            elif state == SpeedStatusEffect.FRIGHT: return Decimal('0.60')
+            elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.50')
+        else:
+            if state == SpeedStatusEffect.NORM: return Decimal('0.95')
+            elif state == SpeedStatusEffect.FRIGHT: return None
+            elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.50')
+        
+        raise ValueError('Otrzymano nieznaną kombinację stan-poziom.')
+
 
     @abstractmethod
     def on_powerup_activated(self):
@@ -159,7 +181,7 @@ class Ghost(Actor, Collidable):
 
     def on_spawn(self):
         super().on_spawn()
-        self.set_state(GhostState.SCATTER)      # Domyślny stan to SCATTER
+        self.set_state(GhostState.SCATTEr)      # Domyślny stan to SCATTER
 
         # Zrób tak aby duch decydował na pozycji spawnowej
         self.direction = Direction.RIGHT
@@ -172,7 +194,7 @@ class Ghost(Actor, Collidable):
         # Przywróć poprzednią pozycję
         self.set_position(spawn_pos)
         
-    def on_collision(self, obj):
+    def on_enter(self, obj):
         from src.pacman.actors.pacman import Pacman
         if not isinstance(obj, Pacman):
             return
@@ -182,9 +204,6 @@ class Ghost(Actor, Collidable):
             self.kill()
         else:
             pacman.kill()
-
-    def set_tunnel_speed(self, speed: Decimal):
-        self.tunnel_speed = speed
 
     def toggle_tunnel(self):
         self.in_tunnel = not self.in_tunnel
