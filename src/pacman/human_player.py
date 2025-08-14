@@ -7,6 +7,7 @@ from .game_state import GameState
 from src.general import Direction
 from src.pacman.maze.objects import SpawnManager
 from typing import Tuple
+from .ghost_schedule import GhostSchedule
 
 class Player(APlayer):
     """Klasa reprezentująca gracza sterowanego przez człowieka
@@ -54,29 +55,32 @@ class Player(APlayer):
         """
         # Mimo, że ta funkcja jest po to aby podejmować decyzję, można wsadzić tutaj część logiki gry, która mogłaby być przydatna podczas trenowania modelu
         # Klasy graczy, będą odpowiedzialne, ze inicjalizację aktorów
+        if self.move_number == 0:
+            self.getGame().set_level(1, schedule=GhostSchedule(1))
+        
         if self.pacman is None:
             # Inicjalizacja Pacmana, jeżeli jeszcze nie został zainicjalizowany
             self.pacman = Pacman(self.getGame().maze)
         
 
         if self.move_number == 0:
-            SpawnManager.request_spawn(self.pacman)
+            SpawnManager.spawn(self.pacman)
         
         elif self.move_number == 5:
             self.blinky = Blinky(self.getGame().maze)
-            SpawnManager.request_spawn(self.blinky)
+            SpawnManager.spawn(self.blinky)
 
         elif self.move_number == 10:
             self.pinky = Pinky(self.getGame().maze)
-            SpawnManager.request_spawn(self.pinky)
+            SpawnManager.spawn(self.pinky)
 
         elif self.move_number == 15:
             self.inky = Inky(self.getGame().maze)
-            SpawnManager.request_spawn(self.inky)
+            SpawnManager.spawn(self.inky)
         
         elif self.move_number == 20:
             self.clyde = Clyde(self.getGame().maze)
-            SpawnManager.request_spawn(self.clyde)
+            SpawnManager.spawn(self.clyde)
 
         # Obsługa zdarzeń
 

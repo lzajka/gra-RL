@@ -28,6 +28,8 @@ class GameState(AGameState):
         self.maze = maze
         self.level = 1
         self.round = 0
+        self.frame = 0
+        self.time_elapsed = 0.0                     # Czas w sekundach
 
     def to_training_array(self) -> List[float]:
         """Zwraca stan gry jako tablicę do treningu.
@@ -53,6 +55,8 @@ class GameState(AGameState):
         gsc.fps = self.fps
         gsc.round = self.round
         gsc.level = self.level
+        gsc.time_elapsed = self.time_elapsed
+        gsc.frame = self.frame
 
     def to_list(self):
         return [

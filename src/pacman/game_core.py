@@ -6,6 +6,7 @@ from src.general import Direction
 from src.general.maze import Maze, UsesMaze
 from queue import Queue
 import pygame
+from .ghost_schedule import GhostSchedule
 HOOK_PRIORITY_COUNT = 10
 
 class GameCore(AGameCore, UsesMaze):
@@ -13,6 +14,7 @@ class GameCore(AGameCore, UsesMaze):
     
 
     def __init__(self):
+
         import src.pacman.maze.objects
         self.config = self.get_default_config()
         super().__init__(self.config.WINDOW_DIMENSION, [
@@ -28,6 +30,7 @@ class GameCore(AGameCore, UsesMaze):
         GameCore.maze : Maze = None
         self.game_state : GameState = None
         self.free_hooks = []
+        self._ghost_schedule = None
 
     @classmethod
     def get_maze(cls):
@@ -55,6 +58,9 @@ class GameCore(AGameCore, UsesMaze):
         :rtype: GameState
         '''
 
+        if self._ghost_schedule is None:
+            raise RuntimeError('Nie ustawiono harmonogramu duchów. Ustaw harmonogram za pomocą metody `set_level` przed wykonaniem ruchu.')
+
         # Przed
         self.prev_state = self.game_state.copy()
         # Po
@@ -64,6 +70,10 @@ class GameCore(AGameCore, UsesMaze):
         GameCore.get_main_instance().show_score()
         self.render()
         self.fps_controller.tick(self.game_state.fps)
+        time_delta = 1.0/self.game_state.fps
+        self.game_state.frame += 1
+        self.game_state.time_elapsed += time_delta
+        self._ghost_schedule.add_time(time_delta)
         #self.game_state.events = pygame.event.get()
 
         return self.game_state
@@ -87,6 +97,9 @@ class GameCore(AGameCore, UsesMaze):
         """Zwraca aktualny stan gry."""
         return self.game_state
     
+    def set_level(self, level, schedule : GhostSchedule):
+        self._ghost_schedule = schedule
+        self.game_state.level = level
     
     def on_restart(self, config):
         '''Metoda restartuję grę. Wykorzystuje podaną konfigurację. Zwraca stan gry
@@ -113,6 +126,7 @@ class GameCore(AGameCore, UsesMaze):
         self.maze = Maze()
         self.maze.load_maze(self.config.MAZE_FILE)
         self.game_state = GameState(self.maze, self.config.STARTING_LIVES)
+        self.game_state.round += 1
         
         return self.game_state
 
