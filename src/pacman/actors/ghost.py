@@ -7,6 +7,7 @@ from src.general.maze import MazeObject, Collidable, Maze
 import array
 from decimal import Decimal
 
+
 class Ghost(Actor, Collidable):
     """Klasa implementująca aktora typu Ghost w grze pacman
     """
@@ -26,10 +27,52 @@ class Ghost(Actor, Collidable):
         super().__init__(parent, respawn_interval, name, (1,0)) # Ustawiam tak, aby obiekt później został przeniesiony do odpowiedniego miejsca. Tak, czy tak jest to w ścianie.
         Ghost.ghosts.append(self)
         from src.pacman.maze.objects import ScatterTarget
-        self._state = GhostState.SCATTER
+        
+        self._is_chasing = False
+        self._is_frightened = False
+        self._is_dead = False
+
         self.scatter_pos = ScatterTarget.get_scatter_target(self.name)
         if self.scatter_pos is None:
             raise ValueError(f"Nie ustawiono pozycji scatter dla ducha {self.name}. Upewnij się, że jest zdefiniowana w pliku labiryntu")
+        
+    @property
+    def is_chasing(self) -> bool:
+        return self._is_chasing
+    
+    @is_chasing.setter
+    def is_chasing(self, value: bool):
+        if self._is_chasing == value:
+            return
+        self._is_chasing = value
+        # TODO: dodać odwrót
+
+    @is_chasing.deleter
+    def is_chasing(self):
+        del self._is_chasing
+    
+    @property
+    def is_frightened(self) -> bool:
+        return self._is_frightened
+    
+    @is_frightened.setter
+    def is_frightened(self, value: bool):
+        if self._is_frightened == value:
+            return
+        self._is_frightened = value
+        # TODO: dodać odwrót
+    
+    @property
+    def is_dead(self) -> bool:
+        return self._is_dead
+    
+    @is_dead.setter
+    def is_dead(self, value: bool):
+        raise NotImplementedError("TODO: Implementacja is_dead setter")
+    
+    @is_dead.deleter
+    def is_dead(self):
+        del self._is_dead
 
     def get_status_effect_speed_modifier(self, state, level):
         from .status_effects import SpeedStatusEffect
@@ -52,34 +95,24 @@ class Ghost(Actor, Collidable):
         
         raise ValueError('Otrzymano nieznaną kombinację stan-poziom.')
 
+    @classmethod
+    def change_powerup_status_all(cls, is_frightened: bool):
+        """Zmienia status power-up dla wszystkich instancji Ghost.
 
-    @abstractmethod
-    def on_powerup_activated(self):
-        """Metoda wywoływana, gdy power-up jest aktywowany.
-        Powinna być zaimplementowana w klasach dziedziczących.
+        :param is_frightened: Nowy status power-up.
+        :type is_frightened: bool
         """
-        raise NotImplementedError("TODO")
-    
-    @abstractmethod
-    def on_powerup_deactivated(self):
-        """Metoda wywoływana, gdy power-up jest dezaktywowany.
-        Powinna być zaimplementowana w klasach dziedziczących.
-        """
-        raise NotImplementedError("TODO")
+        for ghost in cls.ghosts:
+            ghost.is_frightened = is_frightened
 
     @classmethod
-    def notify_instances_powerup_activated():
-        """Powiadamia wszystkie instancje Ghost o aktywacji power-upa.
+    def set_state_for_all(cls, is_chasing: bool = None, is_frightened: bool = None, is_dead: bool = None):
+        """Ustawia stan pościgu dla wszystkich duchów.
         """
-        for ghost in Ghost.ghosts:
-            ghost.on_powerup_activated()
-
-    @classmethod
-    def notify_instances_powerup_deactivated():
-        """Powiadamia wszystkie instancje Ghost o dezaktywacji power-upa.
-        """
-        for ghost in Ghost.ghosts:
-            ghost.on_powerup_deactivated()
+        for ghost in cls.ghosts:
+            if is_chasing is not None: ghost.is_chasing = is_chasing
+            if is_frightened is not None: ghost.is_frightened = is_frightened
+            if is_dead is not None: ghost.is_dead = is_dead
 
     def get_scatter_position(self) -> Tuple[int, int]:
         """Zwraca pozycję scatter dla tego ducha.
@@ -104,15 +137,15 @@ class Ghost(Actor, Collidable):
         :return: Stan ducha.
         :rtype: GhostState
         """
-        return self.state
-    
-    def set_state(self, state: GhostState):
-        """Ustawia stan ducha.
+        if self.is_dead:
+            return GhostState.EATEN
+        elif self.is_frightened:
+            return GhostState.FRIGHTENED
+        elif self._is_chasing:
+            return GhostState.CHASE
+        else:
+            return GhostState.SCATTER
 
-        :param state: Stan ducha do ustawienia.
-        :type state: GhostState
-        """
-        self.state = state
 
 
     def get_target(self) -> Tuple[int, int]:
@@ -181,7 +214,7 @@ class Ghost(Actor, Collidable):
 
     def on_spawn(self):
         super().on_spawn()
-        self.set_state(GhostState.SCATTER)      # Domyślny stan to SCATTER
+        self.is_chasing = False
 
         # Zrób tak aby duch decydował na pozycji spawnowej
         self.direction = Direction.LEFT
