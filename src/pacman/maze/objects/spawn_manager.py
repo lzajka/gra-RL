@@ -33,49 +33,24 @@ class SpawnManager(MazeObject):
         :param spawn: Punkt odradzania duchów w postaci krotki (x, y).
         :type spawn: tuple[int, int]
         """
-        SpawnManager.ghost_spawn = spawn
-
-    @classmethod
-    def request_spawn(cls, actor : Actor):
-        from src.pacman.game_core import GameCore
-        """Prosi o zrespawnowanie aktora w odpowiednim punkcie odradzania.
-        :param actor: Aktor, który ma zostać zrespawnowany.
-        :type actor: Actor
-        """
-        if not hasattr(cls, 'actor_hook_ids'):
-            cls.actor_hook_ids = {}
-
-        if actor in cls.actor_hook_ids:
-            cls.log.debug('Nie można stworzyć kolejnej prośby dla tego samego aktora.')
-            return
-        func = lambda _ : cls._try_spawn(actor)
-        cls.actor_hook_ids[actor] = GameCore.get_main_instance().register_frame_hook(func)
+        cls.ghost_spawn = spawn
 
 
     @classmethod
-    def _try_spawn(cls, actor : Actor):
+    def spawn(cls, actor : Actor):
         from src.pacman.game_core import GameCore
-        """Próbuje zrespawnować aktora w odpowiednim punkcie odradzania.
+        """Spawnuje aktora w odpowiednim punkcie.
         :param actor: Aktor, który ma zostać zrespawnowany.
         :type actor: Actor
         """
         
         spawn_point = cls._get_spawn_point(actor)
 
-
         # Sprawdź pozycję gracza
         from src.pacman.actors.pacman import Pacman
 
         pacman : Pacman = Pacman.get_instance()
-        pos = pacman.get_position()
-        if pos == spawn_point:
-            cls.log.info('Nie można zespawnować ducha - gracz blokuje spawn')
-            return
-        
-        # Jeżeli tutaj jesteśmy, oznacza to, że udało się nam, można sobie odpiąc hooka na tworzeniu
-        hook_id = cls.actor_hook_ids[actor]
-        GameCore.get_main_instance().unregister_frame_hook(hook_id, 0)
-        del cls.actor_hook_ids[actor]
+
         actor.set_position(spawn_point)
         actor.on_spawn()
         
@@ -121,7 +96,7 @@ class _PacmanSpawner(SpawnManager):
     Nie należy jej wywoływać do tworzenia Pacmana, do tego służy klasa SpawnManager.
     """
     def __init__(self, position, parent):
-        self.set_pacman_spawn(position)
+        SpawnManager.set_pacman_spawn(position)
     
     def draw(self):
         """Nic nie rysuj
@@ -132,7 +107,7 @@ class _GhostSpawner(SpawnManager):
     Nie należy jej wywoływać do tworzenia duchów, do tego służy klasa SpawnManager.
     """
     def __init__(self, position, parent):
-        self.set_ghost_spawn(position)
+        SpawnManager.set_ghost_spawn(position)
 
     def _get_color(self):
         from src.pacman.game_core import GameCore
