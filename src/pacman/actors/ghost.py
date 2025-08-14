@@ -184,15 +184,17 @@ class Ghost(Actor, Collidable):
         self.set_state(GhostState.SCATTER)      # Domyślny stan to SCATTER
 
         # Zrób tak aby duch decydował na pozycji spawnowej
-        self.direction = Direction.RIGHT
-        spawn_pos = self.get_position()
-        self.set_position(Maze.shift_position(spawn_pos, Direction.LEFT))
+        self.direction = Direction.LEFT
+        # Duch zazwyczaj idzie w lewo
+
+        #spawn_pos = self.get_position()
+        #self.set_position(Maze.shift_position(spawn_pos, Direction.LEFT))
         # Wykonaj select_future_direction, aby ustawić przyszły kierunek
-        self.select_future_direction(allow_turnbacks=True)
+        #self.select_future_direction(allow_turnbacks=True)
         # i od razu zmień kierunek na przyszły
-        self.direction = self.future_direction
+        #self.direction = self.future_direction
         # Przywróć poprzednią pozycję
-        self.set_position(spawn_pos)
+        #self.set_position(spawn_pos)
         
     def on_enter(self, obj):
         from src.pacman.actors.pacman import Pacman
