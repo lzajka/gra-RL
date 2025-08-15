@@ -71,9 +71,10 @@ class Actor(MazeObject):
         self.direction = Direction.RIGHT
         self.base_speed = base_speed
         self._pause = 0
-        self.prev_pos = (Decimal(-1), Decimal(-1))
+        self.prev_block = (Decimal(-1), Decimal(-1))
         self.status_effects = dict()
         self.apply_speed_status_effect(SpeedStatusEffect.NORM)
+        self.reverse_direction = False
 
 
     @abstractmethod
@@ -282,6 +283,10 @@ class Actor(MazeObject):
         else:
             return Decimal(-2)
 
+    def _handle_reverse_signal(self):
+        if self.reverse_direction:
+            self.direction = self.direction.add_rotation(Direction.DOWN)
+            self.reverse_direction = False
 
     def get_next_step(self, position : Position = None, precise_position : PrecisePosition = None, jump : Decimal = None, depth = 0) -> Tuple[Decimal, Decimal]:
         """Zwraca następny krok aktora w postaci krotki (x, y).
@@ -305,8 +310,13 @@ class Actor(MazeObject):
         if jump is None:
             jump = self.get_speed()
 
+        changed_blocks = self.prev_block != position
+
         if jump >= 1: 
             raise ValueError("Długość skoku musi być mniejsza niż 1. Obecna długość skoku: {}".format(jump))
+
+        if changed_blocks:
+            self._handle_reverse_signal()
 
         future_pos = Maze.shift_position(precise_position, self.direction, jump)
         next_block = Maze.shift_position(position, self.direction)
@@ -333,6 +343,12 @@ class Actor(MazeObject):
         if intersection_crossed >= 0 and depth == 0:
             intersection_pos = Actor._get_path_center_block(precise_position, future_pos)
             self.on_intersection()
+
+        # Zaktualizuj poprzedni blok
+
+        if changed_blocks:
+            self.prev_block = self.get_position()
+
         if intersection_crossed > 0 and depth == 0:
             return self.get_next_step(intersection_pos, tuple([Decimal(intersection_pos[0]), Decimal(intersection_pos[1])]), intersection_crossed, depth + 1)
 
@@ -377,7 +393,6 @@ class Actor(MazeObject):
         :type current_state: GameState
         """
         self.new_pos = self.get_next_step()
-
 
     def commit_changes(self, current_state: GameState):
         """Metoda wywoływana po aktualizacji wszystkich aktorów. Służy do zatwierdzenia zmian w stanie aktora.

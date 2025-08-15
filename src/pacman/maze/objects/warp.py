@@ -1,10 +1,10 @@
-from src.general.maze import MazeObject, Collidable
+from .tunnel import Tunnel
+from src.general.maze import MazeObject
 from src.pacman.game_core import GameCore
-from typing import Tuple
 from src.general.maze import PrecisePosition
 from src.general.utils.tuple_operations import TupleOperations
 
-class Warp(Collidable, MazeObject):
+class Warp(Tunnel):
     """Reprezentacja portalu w labiryncie Pacmana.
     Ponieważ przydatna będzie możliwość sprawdzania kolizji wykorzystam 
     """
@@ -53,8 +53,8 @@ class Warp(Collidable, MazeObject):
         return 'map'
     
 
-
     def on_enter(self, obj):        
+        super().on_enter(obj)
         from src.pacman.actors import Actor
         obj : Actor = obj
         # Chcę się upewnić, że pozycja to liczba całkowita

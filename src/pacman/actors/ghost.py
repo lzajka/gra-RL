@@ -147,6 +147,11 @@ class Ghost(Actor, Collidable):
             return GhostState.SCATTER
 
 
+    def _send_reversal_signal(self):
+        """Sygnał do odwrócenia kierunku ruchu ducha.
+        Odwrócenie występuje dopiero po wejściu na następny kwadrat
+        """
+        raise NotImplementedError("TODO")
 
     def get_target(self) -> Tuple[int, int]:
         """Zwraca cel, do którego duch ma się udać.
