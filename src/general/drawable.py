@@ -80,10 +80,12 @@ class Drawable(ABC):
 
     def draw(self):
         """Rysuje obiekt na ekranie."""
+        color = self._get_color()
+        if color is None:
+            return
         game_core = self._get_game_core()
         position = self._pos()
         filled_ratio = self._get_filled_ratio()
-        color = self._get_color()
         layer = self._get_named_layer()
         cell_size = self._get_grid_cell_size()
 

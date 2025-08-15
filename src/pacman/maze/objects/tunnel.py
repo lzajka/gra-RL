@@ -17,7 +17,7 @@ class Tunnel(Collidable, MazeObject):
 
 
     def _get_color(self):
-        return None
+        pass
 
     def copy(self):
         """Ponieważ ten obiekt się nie zmienia, można zwrócić self bez tworzenia kopii."""
@@ -29,10 +29,6 @@ class Tunnel(Collidable, MazeObject):
     def _get_named_layer(self):
         return 'map'
 
-    def draw(self):
-        """Nic nie rysuj.
-        """
-        pass
     
     def on_exit(self, obj):
         if not isinstance(obj, Actor): return

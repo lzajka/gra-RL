@@ -73,9 +73,9 @@ class MazeObject(Drawable):
         """Metoda wywoływana podczas aktualizacji obiektu. Może być nadpisana w klasach dziedziczących."""
         pass
 
-    def get_color(self):
+    def _get_color(self):
         """Metoda zwracająca kolor obiektu. Może być nadpisana w klasach dziedziczących."""
-        pass
+        return None
 
     def _get_grid_cell_size(self):
         from src.pacman.game_core import GameCore
