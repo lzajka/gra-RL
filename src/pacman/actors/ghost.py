@@ -45,7 +45,7 @@ class Ghost(Actor, Collidable):
         if self._is_chasing == value:
             return
         self._is_chasing = value
-        # TODO: dodać odwrót
+        self.reverse_direction = True
 
     @is_chasing.deleter
     def is_chasing(self):
@@ -60,7 +60,9 @@ class Ghost(Actor, Collidable):
         if self._is_frightened == value:
             return
         self._is_frightened = value
-        # TODO: dodać odwrót
+        if value:
+            # Odwróć kierunek
+            self.reverse_direction = True
     
     @property
     def is_dead(self) -> bool:
