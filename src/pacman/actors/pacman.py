@@ -74,14 +74,8 @@ class Pacman(Actor):
         prev_dir = self.direction
     
         self.direction = self.prepicked_direction
-
-        # Sprawdz czy taki mozna
-        # 1. Sprawdz czy obrot o 180
-        if prev_dir.opposite() == self.direction:
-            # Nie mozna, wiec nie zmieniaj kierunku
-            self.direction = prev_dir
-        # 2. Sprawdz czy mozna w ogole w tym kierunku isc
-        elif self.maze.check_wall(self.get_target()):
+        # Sprawdz czy mozna w tym kierunku isc
+        if self.maze.check_wall(self.get_target()):
         # Jeżeli nie można, to nie zmieniaj kierunku
             self.direction = prev_dir
         
