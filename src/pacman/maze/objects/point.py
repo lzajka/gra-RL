@@ -12,7 +12,11 @@ class Point(MazeObject, Collidable):
         :param position: Pozycja ściany w labiryncie w postaci krotki (x, y).
         :type position: tuple[int, int]
         """
+        from src.pacman.game_core import GameCore
+        from src.pacman import GameConfig
+        self.cfg = GameCore.get_main_instance().get_game_config()
         super().__init__(position, parent)
+ 
     
     def _draw(self):
         """Metoda zwracająca reprezentację obiektu w formie graficznej."""
@@ -25,10 +29,10 @@ class Point(MazeObject, Collidable):
         return []
     
     def _get_color(self):
-        return GameConfig.POINT_COLOR
+        return self.cfg.POINT_COLOR
     
     def _get_filled_ratio(self):
-        return GameConfig.POINT_FILLED_RATIO
+        return self.cfg.POINT_FILLED_RATIO
     
     def _get_named_layer(self):
         return 'map'
@@ -38,10 +42,13 @@ class Point(MazeObject, Collidable):
         return s
     
     def get_reward(self):
-        return 1
+        return self.cfg.POINT_REWARD
     
     def get_point_type(self):
         return 'point'
+    
+    def _eat_length(self):
+        return 1
 
     def on_enter(self, obj):
         from src.pacman.actors.pacman import Pacman
@@ -56,7 +63,7 @@ class Point(MazeObject, Collidable):
         self.prev_multi = pacman.get_speed_multiplier()
         gs.score += self.get_reward()
         gs.collected[self.get_point_type()] += 1
-        pacman.pause(1)
+        pacman.pause(self._eat_length())
         self.destroy()
 
             
