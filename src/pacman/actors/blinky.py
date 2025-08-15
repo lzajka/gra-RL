@@ -2,6 +2,7 @@ from . import Ghost
 from src.general.maze import Maze
 from typing import Tuple
 
+
 class Blinky(Ghost):
     """Reprezentuje ducha blinky w grze Pacman.
     """
@@ -17,7 +18,9 @@ class Blinky(Ghost):
         """
         return cls.main_instance
 
-
+    def _reset_rng(self):
+        from random import Random
+        self._rng = Random(self._game_config.BLINKY_FRNG)
 
     def get_chase_position(self) -> Tuple[int, int]:
         """Zwraca pozycję chase dla ducha blinky.
@@ -36,7 +39,7 @@ class Blinky(Ghost):
         """Tworzy kopię ducha blinky."""
         return None
     
-    def _get_color(self):
+    def _get_normal_color(self):
         from src.pacman.game_core import GameCore
         gc : GameCore = GameCore.get_main_instance()
         return gc.get_game_config().BLINKY_COLOR

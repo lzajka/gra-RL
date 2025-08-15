@@ -43,7 +43,7 @@ class Clyde(Ghost):
         """Tworzy kopię ducha Clyde'a."""
         return None
     
-    def _get_color(self):
+    def _get_normal_color(self):
         from src.pacman.game_core import GameCore
         gc : GameCore = GameCore.get_main_instance()
         return gc.get_game_config().CLYDE_COLOR
@@ -59,3 +59,7 @@ class Clyde(Ghost):
     def to_csv_line(self):
         pos = self.get_position()
         return [str(pos[0]), str(pos[1])]
+    
+    def _reset_rng(self):
+        from random import Random
+        self._rng = Random(self._game_config.CLYDE_FRNG)

@@ -33,6 +33,10 @@ class GameConfig:
     FRIGHT_COLOR        = 'purple'
     GHOST_SPAWNER_COLOR = 'grey'
     GHOST_SPAWNER_FILLED_RATIO = 1
+    PINKY_FRNG          = 151
+    BLINKY_FRNG         = 519
+    INKY_FRNG           = 678
+    CLYDE_FRNG          = 712
     POINT_COLOR         = 'white'
     POINT_FILLED_RATIO  = 0.2
     FRUIT_COLOR         = 'green'

@@ -6,7 +6,9 @@ from typing import *
 from src.general.maze import MazeObject, Collidable, Maze
 import array
 from decimal import Decimal
-
+from src.pacman import GameConfig
+from src.pacman.actors.actor import Position
+from random import Random
 
 class Ghost(Actor, Collidable):
     """Klasa implementująca aktora typu Ghost w grze pacman
@@ -24,18 +26,22 @@ class Ghost(Actor, Collidable):
         :param name: Nazwa aktora.
         :type name: str
         """
+        from src.pacman.game_core import GameCore
+        self._game_config : GameConfig = GameCore.get_main_instance().get_game_config()
+        self._is_chasing = False
+        self._is_frightened = False
+        self._is_dead = False
+        self._rng : Random = None
+
         super().__init__(parent, respawn_interval, name, (1,0)) # Ustawiam tak, aby obiekt później został przeniesiony do odpowiedniego miejsca. Tak, czy tak jest to w ścianie.
         Ghost.ghosts.append(self)
         from src.pacman.maze.objects import ScatterTarget
         
-        self._is_chasing = False
-        self._is_frightened = False
-        self._is_dead = False
 
         self.scatter_pos = ScatterTarget.get_scatter_target(self.name)
         if self.scatter_pos is None:
             raise ValueError(f"Nie ustawiono pozycji scatter dla ducha {self.name}. Upewnij się, że jest zdefiniowana w pliku labiryntu")
-        
+    
     @property
     def is_chasing(self) -> bool:
         return self._is_chasing
@@ -60,9 +66,12 @@ class Ghost(Actor, Collidable):
         if self._is_frightened == value:
             return
         self._is_frightened = value
+        
         if value:
             # Odwróć kierunek
             self.reverse_direction = True
+            # Zresetuj rng
+            self._reset_rng()
     
     @property
     def is_dead(self) -> bool:
@@ -75,6 +84,10 @@ class Ghost(Actor, Collidable):
     @is_dead.deleter
     def is_dead(self):
         del self._is_dead
+
+    @abstractmethod
+    def _reset_rng(self):
+        pass
 
     def get_status_effect_speed_modifier(self, state, level):
         from .status_effects import SpeedStatusEffect
@@ -96,16 +109,6 @@ class Ghost(Actor, Collidable):
             elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.50')
         
         raise ValueError('Otrzymano nieznaną kombinację stan-poziom.')
-
-    @classmethod
-    def change_powerup_status_all(cls, is_frightened: bool):
-        """Zmienia status power-up dla wszystkich instancji Ghost.
-
-        :param is_frightened: Nowy status power-up.
-        :type is_frightened: bool
-        """
-        for ghost in cls.ghosts:
-            ghost.is_frightened = is_frightened
 
     @classmethod
     def set_state_for_all(cls, is_chasing: bool = None, is_frightened: bool = None, is_dead: bool = None):
@@ -155,6 +158,34 @@ class Ghost(Actor, Collidable):
         """
         raise NotImplementedError("TODO")
 
+    def get_frightened_position(self) -> Position:
+        pos = self.get_position()
+        next_pos = Maze.shift_position(pos, self.direction)
+        
+        # sprawdź sąsiadów
+        check_positions = [
+            (next_pos[0], next_pos[1] - 1),  # UP
+            (next_pos[0] - 1, next_pos[1]),  # LEFT
+            (next_pos[0], next_pos[1] + 1),   # DOWN
+            (next_pos[0] + 1, next_pos[1])  # RIGHT
+        ]
+
+        dirs = [Direction.UP, Direction.LEFT, Direction.DOWN, Direction.RIGHT]
+
+        # Zabroń odwracanie kierunku
+        check_positions[dirs.index(self.direction)] = (0,0)     # Ustawiam lokalizacje na ścianę.
+
+        # Pomieszaj
+        self._rng.shuffle(check_positions)
+
+        for pos in check_positions:
+            if not self.maze.check_wall(pos):
+                return pos
+            
+        raise RuntimeError("Nie znaleziono dostępnej pozycji dla ducha w trybie FRIGHT. Sprawdź ściany i dostępność sąsiadów.")
+
+
+
     def get_target(self) -> Tuple[int, int]:
         """Zwraca cel, do którego duch ma się udać.
         Metoda może zwrócić pozycję do której duch nie może się udać.
@@ -169,9 +200,22 @@ class Ghost(Actor, Collidable):
             return self.get_scatter_position()
         elif state == GhostState.CHASE:
             return self.get_chase_position()
+        elif state == GhostState.FRIGHTENED:
+            return self.get_frightened_position()
 
     def on_intersection(self):
         self.direction = self.future_direction
+    
+    def _get_color(self):
+        if self.is_frightened:
+            return self._game_config.FRIGHT_COLOR
+        else:
+            return self._get_normal_color()
+    
+    @abstractmethod
+    def _get_normal_color(self):
+        pass
+
         
     def select_future_direction(self, allow_turnbacks: bool = False):
         """Wybiera następny kierunek ruchu ducha
@@ -242,7 +286,7 @@ class Ghost(Actor, Collidable):
             return
         
         pacman : Pacman = obj
-        if self.state == GhostState.FRIGHTENED:
+        if self.get_state() == GhostState.FRIGHTENED:
             self.kill()
         else:
             pacman.kill()
