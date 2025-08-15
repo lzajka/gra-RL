@@ -64,7 +64,7 @@ class Maze:
         lines = []
         pos = [0,0]
         with open(file_path, 'r') as file:
-            lines = file.readlines()
+            lines = file.read().splitlines()
             self.size = (len(lines[0]), len(lines))  # Zakłada, że wszystkie linie mają tę samą długość
             for line in lines:
                 # Usuwanie białych znaków z linii

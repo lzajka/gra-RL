@@ -1,7 +1,7 @@
 from pygame.font import SysFont
 from decimal import Decimal
 class GameConfig:
-    WINDOW_DIMENSION    = (1000,1000)
+    WINDOW_DIMENSION    = (700, 775)
     TICKRATE_INITIAL    = 2
     TICKRATE_INCREASE   = 0.2
     TICKRATE_MAX        = 10
