@@ -19,7 +19,7 @@ class GameState(AGameState):
         self.score = 0
         self.collected = {
             'point': 0,
-            'big_point': 0,
+            'energizer': 0,
             'fruit': 0
         }
         self.max_points = 0

@@ -31,6 +31,9 @@ class GameConfig:
     BLINKY_COLOR        = 'red'
     CLYDE_COLOR         = 'cyan'
     FRIGHT_COLOR        = 'purple'
+    ENERGIZER_COLOR     = 'green'
+    ENERGIZER_FILLED_RATIO = 0.5
+    ENERGIZER_REWARD    = 50
     GHOST_SPAWNER_COLOR = 'grey'
     GHOST_SPAWNER_FILLED_RATIO = 1
     PINKY_FRNG          = 151
@@ -39,6 +42,7 @@ class GameConfig:
     CLYDE_FRNG          = 712
     POINT_COLOR         = 'white'
     POINT_FILLED_RATIO  = 0.2
+    POINT_REWARD        = 10
     FRUIT_COLOR         = 'green'
     FRUIT_FILLED_RATIO  = 0.5
     WARP_COLOR          = 'lightblue'
