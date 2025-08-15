@@ -160,7 +160,7 @@ class Ghost(Actor, Collidable):
 
     def get_frightened_position(self) -> Position:
         pos = self.get_position()
-        next_pos = Maze.shift_position(pos, self.direction)
+        next_pos = self.maze.shift_position(pos, self.direction)
         
         # sprawdź sąsiadów
         check_positions = [
@@ -224,7 +224,7 @@ class Ghost(Actor, Collidable):
 
         # Przesuń pozycję ducha o 1 krok
         pos = self.get_position()
-        next_pos = Maze.shift_position(pos, self.direction)
+        next_pos = self.maze.shift_position(pos, self.direction)
 
         
         # Teraz sprawdź, wszystkie kierunki wokół next_pos

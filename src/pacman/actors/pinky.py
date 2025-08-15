@@ -31,7 +31,7 @@ class Pinky(Ghost):
         current_pos = pacman.get_position()
         future_pos = current_pos
         for i in range(4):
-            future_pos = Maze.shift_position(future_pos, pacman.direction)
+            future_pos = self.maze.shift_position(future_pos, pacman.direction)
 
         # Pinky jeżeli pacman idzie w górę to celuje w lewo
         if pacman.direction == Direction.UP:

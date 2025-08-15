@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from . import Maze
+from . import Maze, PrecisePosition, Position
 from typing import Tuple
 from numbers import Number
 from src.general import Drawable
@@ -12,6 +12,8 @@ class MazeObject(Drawable):
     """Klasa abstrakcyjna reprezentująca obiekt znajdujący się w labiryncie.
     """
     character_to_class_mapping = {}
+
+
     def __init__(self, position: tuple[Number, Number], parent : Maze):
         """Inicjalizuje obiekt labiryntu na podstawie jego pozycji.
 
@@ -57,6 +59,10 @@ class MazeObject(Drawable):
         :param position: Nowa pozycja obiektu w postaci krotki (x, y).
         :type position: tuple[Decimal, Decimal]
         """
+        # Jeżeli ujemna to przejdź na drugą stronę 
+        position = self.maze.handle_outside_positions(position)
+
+
         self.erase()
         self.maze._remove_object(self)
         self.position = Decimal(position[0]), Decimal(position[1])

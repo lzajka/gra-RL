@@ -4,6 +4,8 @@ from decimal import Decimal
 
 PrecisePosition = Tuple[Decimal, Decimal]
 Position = Tuple[int, int]
+from src.general.utils import TupleOperations as to
+
 
 class Maze:
     """Klasa przechowująca informacje na temat labiryntu oraz elementów, z których się składa.
@@ -32,9 +34,20 @@ class Maze:
         #        objects2.add(new_obj)
         #    new_maze.objects_at[pos] = objects2
         #return new_maze
-            
-    @staticmethod
-    def shift_position(origin : Tuple[Decimal, Decimal], direction : Direction, steps: Decimal = 1) -> Tuple[Decimal, Decimal]:
+
+    def handle_outside_positions(self, pos):
+        is_int = isinstance(pos[0], int)
+        map_size = to.to_decimal(self.get_size())
+        p = list(to.add_tuples(map_size, pos))
+        p[0] %= map_size[0]
+        p[1] %= map_size[1]
+
+        t = tuple(p)
+        if is_int:
+            to.to_int(to.round_tuple(t))
+        return t
+
+    def shift_position(self, origin : Tuple[Decimal, Decimal], direction : Direction, steps: Decimal = 1) -> Tuple[Decimal, Decimal]:
         """Przesuwa pozycję o jeden krok w danym kierunku.
 
         :param origin: Pozycja początkowa w postaci krotki (x, y).
@@ -44,14 +57,18 @@ class Maze:
         :return: Nowa pozycja po przesunięciu.
         :rtype: Tuple[Decimal, Decimal]
         """
+        r = None
         if direction == Direction.LEFT:
-            return (origin[0] - steps, origin[1])
+            r = (origin[0] - steps, origin[1])
         elif direction == Direction.RIGHT:
-            return (origin[0] + steps, origin[1])
+            r = (origin[0] + steps, origin[1])
         elif direction == Direction.UP:
-            return (origin[0], origin[1] - steps)
+            r = (origin[0], origin[1] - steps)
         elif direction == Direction.DOWN:
-            return (origin[0], origin[1] + steps)
+            r = (origin[0], origin[1] + steps)
+
+        return self.handle_outside_positions(r)
+        
 
     def load_maze(self, file_path: str):
         """Ładuje labirynt z pliku.
@@ -94,7 +111,7 @@ class Maze:
         :return: zbiór obiektów znajdujących się w danym miejscu labiryntu.
         :rtype: Set[MazeObject]
         """
-        
+        pos = self.handle_outside_positions(pos)
         return self.objects_at.get(pos, set())
     
     def check_wall(self, pos: Tuple[int, int]) -> bool:
@@ -105,6 +122,7 @@ class Maze:
         :return: True jeśli w danej pozycji znajduje się ściana, False w przeciwnym razie.
         :rtype: bool
         """
+        pos = self.handle_outside_positions(pos)
         from src.pacman.maze.objects import Wall
         objs : Set = self.objects_at.get(pos, set())
         for obj in objs:

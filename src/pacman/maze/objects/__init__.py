@@ -3,7 +3,7 @@ from .scatter_target import ScatterTarget
 from .spawn_manager import SpawnManager
 from .tunnel import Tunnel
 from .wall import Wall
-from .warp import Warp
+#from .warp import Warp
 from .energizer import Energizer
 
 __all__ = [
@@ -12,6 +12,6 @@ __all__ = [
     'SpawnManager',
     'Tunnel',
     'Wall',
-    'Warp',
+#    'Warp',
     'Energizer'
 ]

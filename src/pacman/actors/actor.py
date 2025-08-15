@@ -318,8 +318,8 @@ class Actor(MazeObject):
         if changed_blocks:
             self._handle_reverse_signal()
 
-        future_pos = Maze.shift_position(precise_position, self.direction, jump)
-        next_block = Maze.shift_position(position, self.direction)
+        future_pos = self.maze.shift_position(precise_position, self.direction, jump)
+        next_block = self.maze.shift_position(position, self.direction)
 
         if self._pause > 0 and depth == 0:
             self._pause -= 1

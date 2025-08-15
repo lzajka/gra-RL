@@ -26,9 +26,9 @@ class Inky(Ghost):
         blinky : Blinky = Blinky.get_instance()
 
         if pacman.direction == Direction.UP:
-            pacman_offset = Maze.shift_position(pacman.get_position(), Direction.LEFT, 2)
+            pacman_offset = self.maze.shift_position(pacman.get_position(), Direction.LEFT, 2)
             
-        pacman_offset = Maze.shift_position(pacman.get_position(), pacman.direction, 2)
+        pacman_offset = self.maze.shift_position(pacman.get_position(), pacman.direction, 2)
         blinky_pos = blinky.get_position()
         offset = (blinky_pos[0] - pacman_offset[0], blinky_pos[1] - pacman_offset[1])
         future_pos = (pacman_offset[0] + offset[0] * 2, pacman_offset[1] + offset[1] * 2)
