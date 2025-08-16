@@ -10,6 +10,7 @@ class GameConfig:
 
     DEATH_REWARD        = -10
     FRUIT_REWARD        = 10
+    GHOST_EAT_REWARD    = 100
     SURVIVAL_REWARD     = 0
     EDGES_KILL          = True
     CAPTION             = 'Pacman'

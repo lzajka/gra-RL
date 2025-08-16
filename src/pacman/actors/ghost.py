@@ -9,6 +9,8 @@ from decimal import Decimal
 from src.pacman import GameConfig
 from src.pacman.actors.actor import Position
 from random import Random
+from src.pacman.timer import start_time_timer
+from src.pacman.game_state import GameState
 
 class Ghost(Actor, Collidable):
     """Klasa implementująca aktora typu Ghost w grze pacman
@@ -27,9 +29,9 @@ class Ghost(Actor, Collidable):
         :type name: str
         """
         from src.pacman.game_core import GameCore
-        self._game_config : GameConfig = GameCore.get_main_instance().get_game_config()
+        self._gc = GameCore.get_main_instance()
+        self._game_config : GameConfig = self._gc.get_game_config()
         self._is_chasing = False
-        self._is_frightened = False
         self._is_dead = False
         self._rng : Random = None
 
@@ -57,29 +59,19 @@ class Ghost(Actor, Collidable):
     def is_chasing(self):
         del self._is_chasing
     
-    @property
-    def is_frightened(self) -> bool:
-        return self._is_frightened
-    
-    @is_frightened.setter
-    def is_frightened(self, value: bool):
-        if self._is_frightened == value:
-            return
-        self._is_frightened = value
-        
-        if value:
+
+    @Actor.is_frightened.setter
+    def is_frightened(self, value):
+        changes_value = self._is_frightened != value
+        if changes_value and value:
             # Odwróć kierunek
             self.reverse_direction = True
             # Zresetuj rng
             self._reset_rng()
-    
+        super(Ghost, self.__class__).is_frightened.fset(self, value)
     @property
     def is_dead(self) -> bool:
         return self._is_dead
-    
-    @is_dead.setter
-    def is_dead(self, value: bool):
-        raise NotImplementedError("TODO: Implementacja is_dead setter")
     
     @is_dead.deleter
     def is_dead(self):
@@ -88,25 +80,27 @@ class Ghost(Actor, Collidable):
     @abstractmethod
     def _reset_rng(self):
         pass
+    
+    def _get_speed_multiplier(self):
+        level = self._game_state.level
+        if self.is_dead: return Decimal('5')
 
-    def get_status_effect_speed_modifier(self, state, level):
-        from .status_effects import SpeedStatusEffect
         if level == 1:
-            if state == SpeedStatusEffect.NORM: return Decimal('0.75')
-            elif state == SpeedStatusEffect.FRIGHT: return Decimal('0.50')
-            elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.4')
+            if self.is_frightened: return Decimal('0.50')
+            elif self.is_tunneling: return Decimal('0.4')
+            else: return Decimal('0.75')
         elif 2 <= level <= 4:
-            if state == SpeedStatusEffect.NORM: return Decimal('0.85')
-            elif state == SpeedStatusEffect.FRIGHT: return Decimal('0.55')
-            elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.45')
+            if self.is_frightened: return Decimal('0.55')
+            elif self.is_tunneling: return Decimal('0.45')
+            else: return Decimal('0.85')
         elif 5 <= level <= 20:
-            if state == SpeedStatusEffect.NORM: return Decimal('0.95')
-            elif state == SpeedStatusEffect.FRIGHT: return Decimal('0.60')
-            elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.50')
+            if self.is_frightened: return Decimal('0.60')
+            elif self.is_tunneling: return Decimal('0.50')
+            else: return Decimal('0.95')
         else:
-            if state == SpeedStatusEffect.NORM: return Decimal('0.95')
-            elif state == SpeedStatusEffect.FRIGHT: return None
-            elif state == SpeedStatusEffect.TUNNELING: return Decimal('0.50')
+            #if self.is_frightened: return None
+            if self.is_tunneling: return Decimal('0.50')
+            else: return Decimal('0.95')
         
         raise ValueError('Otrzymano nieznaną kombinację stan-poziom.')
 
@@ -194,9 +188,11 @@ class Ghost(Actor, Collidable):
         :return: Pozycja celu w postaci krotki (x, y).
         :rtype: Tuple[int, int]
         """
+        from src.pacman.maze.objects import SpawnManager
         state = self.get_state()
-
-        if state == GhostState.SCATTER:
+        if state == GhostState.EATEN:
+            return SpawnManager.get_spawn(self)
+        elif state == GhostState.SCATTER:
             return self.get_scatter_position()
         elif state == GhostState.CHASE:
             return self.get_chase_position()
@@ -282,6 +278,18 @@ class Ghost(Actor, Collidable):
     
     def on_leave_ghost_pen(self):
         self.direction = Direction.LEFT
+
+    def kill(self):
+        """Zabija ducha. Po zabiciu duch wraca na spawn.
+        """
+        from src.pacman.maze.objects import SpawnManager
+        f = lambda _ : SpawnManager.spawn(self)
+        reward = self._game_config.GHOST_EAT_REWARD
+        self._game_state.score += reward
+        self._is_dead = True
+        
+        #start_time_timer(self._game_config.GHOST_SPAWN_RETURN_T, f, 4)
+
         
     def on_enter(self, obj):
         from src.pacman.actors.pacman import Pacman
@@ -289,8 +297,12 @@ class Ghost(Actor, Collidable):
             return
         
         pacman : Pacman = obj
-        if self.get_state() == GhostState.FRIGHTENED:
+        state = self.get_state()
+        if state == GhostState.FRIGHTENED:
             self.kill()
+            self._is_dead = True
+        elif state == GhostState.EATEN:
+            return
         else:
             pacman.kill()
 

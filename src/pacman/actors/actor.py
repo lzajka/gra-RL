@@ -5,7 +5,6 @@ from src.general import Direction
 from src.pacman.game_core import GameCore, GameState
 from collections import deque
 from decimal import Decimal, ROUND_DOWN
-from .status_effects import SpeedStatusEffect
 from src.general.utils import TupleOperations
 from src.general.maze import PrecisePosition, Position
 detected_collisions = set()
@@ -55,105 +54,70 @@ class Actor(MazeObject):
         :param spawn: Punkt startowy aktora w labiryncie.
         :type spawn: Tuple[int, int]
         """
+        game : GameCore = GameCore.get_main_instance()
+        config = game.get_game_config()
         if not Actor.registered_collision_hooks:
-            game : GameCore = GameCore.get_main_instance()
+            
             game.register_frame_hook(execute_on_collisions, priority_group=4)
             Actor.registered_collision_hooks = True
 
         if base_speed is None:
-            base_speed = GameCore.get_main_instance().get_game_config().BASE_SPEED
+            base_speed = config.BASE_SPEED
 
         self.new_pos = 0
-        self.multiplier = Decimal('1.0')
-        super().__init__(spawn, parent)
+        self._is_frightened = False
         self.respawn_interval = respawn_interval
         self.name = name
         self.direction = Direction.RIGHT
-        self.base_speed = base_speed
+        self._base_speed = base_speed
         self._pause = 0
         self.prev_block = (Decimal(-1), Decimal(-1))
         self.status_effects = dict()
-        self.apply_speed_status_effect(SpeedStatusEffect.NORM)
         self.reverse_direction = False
+        self._game_state : GameState = game.get_current_state()
+        self._level = self._game_state.level
+        self._is_tunneling = False
+        super().__init__(spawn, parent)
 
+    @property
+    def is_tunneling(self):
+        return self._is_tunneling
+    
+    @is_tunneling.setter
+    def is_tunneling(self, value):
+        self._is_tunneling = value
+
+    @property
+    def is_frightened(self) -> bool:
+        return self._is_frightened
+    
+    @is_frightened.setter
+    def is_frightened(self, value: bool):
+        self._is_frightened = value
 
     @abstractmethod
-    def get_status_effect_speed_modifier(self, state : SpeedStatusEffect, level) -> Decimal:
+    def _get_speed_multiplier(self):
         pass
-    
-    def apply_speed_status_effect(self, state: SpeedStatusEffect):
-        """Ustawia stan aktora.
 
-        :param state: Stan aktora do ustawienia.
-        :type state: ActorState
-        """
-        gs : GameState = GameState.get_main_instance()
-        level = gs.level
-        speed_modifier = self.get_status_effect_speed_modifier(state, level)
-
-        if speed_modifier is None:
-            # Zwracając None informuje, że dany stan nie występuje
-            return
-        
-        self.status_effects[state] = speed_modifier
-        self.set_speed_multiplier(speed_modifier)
-    
-    def clear_status_effect(self, state : SpeedStatusEffect):
-        """Czyści stan aktora."""
-        if state == SpeedStatusEffect.NORM:
-            raise ValueError("Nie można usunąć stanu NORM. Jest on stanem podstawowym, na który nakładane są poszczególne stany.")
-        
-        if state not in self.status_effects:
-            return
-        
-        del self.status_effects[state]
-
-        slowest = Decimal('1.0')  # Ustawiam na maksymalną prędkość
-        # Wybierz najmniejszą prędkość
-        for speed in self.status_effects.values():
-            if speed < slowest:
-                slowest = speed
-
-        self.set_speed_multiplier(slowest)
-
-    def toggle_status_effect(self, state : SpeedStatusEffect):
-        """Przełącza stan prędkości aktora.
-
-        :param state: Stan prędkości do przełączenia.
-        :type state: SpeedStatusEffect
-        """
-        if state in self.status_effects:
-            self.clear_status_effect(state)
-        else:
-            self.apply_speed_status_effect(state)
-
-    
-    def set_speed_multiplier(self, multiplier : Decimal):
-        """Ustawia mnożnik prędkości aktora. Ostateczna prędkość jest wynikiem mnożenia prędkości podstawowej oraz mnożnika.
-
-        :param speed: Prędkość aktora.
-        :type speed: Decimal
-        :raises ValueError: Zgłasza w przypadku podania mnożnika na tyle dużego, że prędkość ostateczna jest większa niż 1. Jest to zabezpieczenie przed pomijaniem bloków.
-        """        
-        if self.base_speed * Decimal(self.multiplier) > 1:
+    @property
+    def multiplier(self):
+        value = self._get_speed_multiplier()
+        if self._base_speed * Decimal(value) > 1:
             raise ValueError('Wynik mnożenia prędkości podstawowej i mnożnika większy niż 1.')
-        self.multiplier = Decimal(multiplier)
+        return Decimal(value)
 
-    def get_speed_multiplier(self) -> Decimal:
-        """Zwraca mnożnik prędkości aktora.
+    
+    def _update_speed_multiplier(self):
+        pass
 
-        :return: Mnożnik prędkości aktora
-        :rtype: Decimal
-        """
-        return self.multiplier
-
-    def get_speed(self) -> Decimal:
+    @property
+    def speed(self) -> Decimal:
         """Metoda zwraca prędkość aktora. Prędkość jest wynikiem mnożenia prędkości podstawowej oraz mnożnika.
 
         :return: Prędkość aktora
         :rtype Decimal
         """
-        return self.multiplier * self.base_speed
+        return self.multiplier * self._base_speed
 
     @classmethod
     @abstractmethod
@@ -299,7 +263,7 @@ class Actor(MazeObject):
         if precise_position is None:
             precise_position = self.get_precise_position()
         if jump is None:
-            jump = self.get_speed()
+            jump = self.speed
 
         changed_blocks = self.prev_block != position
 

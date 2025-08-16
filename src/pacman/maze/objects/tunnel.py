@@ -1,5 +1,5 @@
 from src.general.maze import MazeObject, Collidable
-from src.pacman.actors import Actor, SpeedStatusEffect
+from src.pacman.actors import Actor
 
 class Tunnel(Collidable, MazeObject):
     """Obiekt spowalniający duchy. Wypełnione są nim tunele.
@@ -28,12 +28,12 @@ class Tunnel(Collidable, MazeObject):
     def on_exit(self, obj):
         if not isinstance(obj, Actor): return
         a : Actor = obj
-        a.clear_status_effect(SpeedStatusEffect.TUNNELING)
+        a.is_tunneling = False
 
     def on_enter(self, obj):
         if not isinstance(obj, Actor): return
         a : Actor = obj
-        a.apply_speed_status_effect(SpeedStatusEffect.TUNNELING)
+        a.is_tunneling = True
 
         
 

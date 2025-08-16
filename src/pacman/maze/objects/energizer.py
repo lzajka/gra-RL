@@ -50,7 +50,7 @@ class Energizer(Point):
     def activate(self):
         from src.pacman.timer import start_time_timer
         pac = Pacman.get_instance()
-        pac.apply_speed_status_effect(GhostState.FRIGHTENED)
+        pac.is_frightened = True
         Ghost.set_state_for_all(is_frightened=True)
         self.gc._ghost_schedule.is_timer_paused = True
         lvl = self.gc.get_current_state().level
@@ -58,7 +58,7 @@ class Energizer(Point):
     
     def deactivate(self, GameState : GameState):
         pac = Pacman.get_instance()
-        pac.clear_status_effect(GhostState.FRIGHTENED)
+        pac.is_frightened = False
         Ghost.set_state_for_all(is_frightened=False)
         self.gc._ghost_schedule.is_timer_paused = False
 

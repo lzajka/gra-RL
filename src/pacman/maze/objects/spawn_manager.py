@@ -32,7 +32,15 @@ class SpawnManager(MazeObject):
             GhostSpawner._spawn(actor, now)
         elif isinstance(actor, Pacman):
             PacmanSpawner._spawn(actor, now)
-        
+
+    @staticmethod
+    def get_spawn(actor : Actor):
+        if isinstance(actor, Ghost):
+            return GhostSpawner._get_spawn()
+        elif isinstance(actor, Pacman):
+            return PacmanSpawner._get_spawn()
+    
+
     def _get_color(self):
         return None
     
@@ -55,7 +63,10 @@ class PacmanSpawner(SpawnManager):
         PacmanSpawner.maze : Maze = parent
         super().__init__(position, parent)
 
-    
+    @staticmethod
+    def _get_spawn():
+        return PacmanSpawner.pac_spawn
+
     def draw(self):
         """Nic nie rysuj
         """
@@ -92,6 +103,10 @@ class GhostSpawner(SpawnManager, Collidable):
         return 'map'
     
     @staticmethod
+    def _get_spawn():
+        return GhostSpawner.ghost_spawn
+
+    @staticmethod
     def _release_ghost(_):
         q = GhostSpawner.spawn_queue
         if len(q) == 0:
@@ -109,7 +124,7 @@ class GhostSpawner(SpawnManager, Collidable):
 
 
     @staticmethod
-    def _spawn(obj : Actor, now : bool):
+    def _spawn(obj : Actor, now : bool, first_time = True):
         obj : Ghost = obj
         q = GhostSpawner.spawn_queue
 
@@ -120,7 +135,7 @@ class GhostSpawner(SpawnManager, Collidable):
             GhostSpawner.spawn_queue.append(obj)
         obj.set_position(pos)
         obj.direction = Direction.LEFT
-        obj.on_spawn()
+        if first_time: obj.on_spawn()
 
         if now:
             obj.on_leave_ghost_pen()
@@ -135,6 +150,16 @@ class GhostSpawner(SpawnManager, Collidable):
         if id(GhostSpawner.prev_ghost) == id(obj):
             GhostSpawner.prev_ghost = None
             GhostSpawner._timer_wrapper()
+
+    def on_enter(self, obj):
+        if not isinstance(obj, Ghost):
+            return
+        ghost : Ghost = obj
+        if ghost._is_dead:
+            ghost._is_dead = False
+            ghost._is_frightened = False
+            self._spawn(ghost, False, False)
+            
     
 MazeObject.character_to_class_mapping['P'] = PacmanSpawner
 MazeObject.character_to_class_mapping['G'] = GhostSpawner

@@ -60,7 +60,6 @@ class Point(MazeObject, Collidable):
 
         pacman : Pacman = obj
 
-        self.prev_multi = pacman.get_speed_multiplier()
         gs.score += self.get_reward()
         gs.collected[self.get_point_type()] += 1
         pacman.pause(self._eat_length())

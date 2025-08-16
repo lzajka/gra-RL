@@ -20,24 +20,20 @@ class Pacman(Actor):
         """
         return cls.main_instance
     
-    def get_status_effect_speed_modifier(self, state, level):
-        from src.pacman.actors import SpeedStatusEffect
+    def _get_speed_multiplier(self):
+        level = self._game_state.level
+        
         if level == 1:
-            if state == SpeedStatusEffect.NORM: return Decimal('0.8')
-            elif state == SpeedStatusEffect.FRIGHT: return Decimal('0.9')
-            elif state == SpeedStatusEffect.TUNNELING: return None
+            if self.is_frightened: return Decimal('0.9')
+            else: return Decimal('0.8')
         elif 2 <= level <= 4:
-            if state == SpeedStatusEffect.NORM: return Decimal('0.9')
-            elif state == SpeedStatusEffect.FRIGHT: return Decimal('0.95')
-            elif state == SpeedStatusEffect.TUNNELING: return None
+            if self.is_frightened: return Decimal('0.95')
+            else: return Decimal('0.9')
         elif 5 <= level <= 20:
-            if state == SpeedStatusEffect.NORM: return Decimal('1')
-            elif state == SpeedStatusEffect.FRIGHT: return Decimal('1')
-            elif state == SpeedStatusEffect.TUNNELING: return None
+            if self.is_frightened: return Decimal('1')
+            else: return Decimal('1')
         else:
-            if state == SpeedStatusEffect.NORM: return Decimal('0.9')
-            elif state == SpeedStatusEffect.FRIGHT: return None
-            elif state == SpeedStatusEffect.TUNNELING: return None
+            return Decimal('0.9')
 
     def copy(self):
         return None
