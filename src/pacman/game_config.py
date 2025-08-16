@@ -40,6 +40,8 @@ class GameConfig:
     BLINKY_FRNG         = 519
     INKY_FRNG           = 678
     CLYDE_FRNG          = 712
+    SPAWNG_EXIT_TIME    = 1
+    GHOST_SPAWN_RETURN_T= 4
     POINT_COLOR         = 'white'
     POINT_FILLED_RATIO  = 0.2
     POINT_REWARD        = 10

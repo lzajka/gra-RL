@@ -1,13 +1,17 @@
-from src.general.maze import Maze, MazeObject
-from src.pacman.actors import Actor
+from src.general.maze import Maze, MazeObject, Collidable
+from src.pacman.actors import Actor, Ghost, Pacman
+from src.general.direction import Direction
 from abc import abstractmethod
 from typing import Tuple, Dict
 from logging import getLogger
+from src.pacman.timer import start_time_timer
+from collections import deque
+from src.pacman.game_config import GameConfig
 
 class SpawnManager(MazeObject):
     """Klasa odpowiedzialna za zarządzanie odradzaniem pacmana i duchów w labiryncie.
     """
-    
+
 
     def __init__(self, pos, parent):
         """Inicjalizuje instancję klasy SpawnManager.
@@ -18,105 +22,119 @@ class SpawnManager(MazeObject):
         super().__init__(pos, parent)
 
     @classmethod
-    def set_pacman_spawn(cls, spawn: Tuple[int, int]):
-        """Ustawia punkt odradzania Pacmana.
-        
-        :param spawn: Punkt odradzania Pacmana w postaci krotki (x, y).
-        :type spawn: tuple[int, int]
-        """
-        SpawnManager.pacman_spawn = spawn
-
-    @classmethod
-    def set_ghost_spawn(cls, spawn: Tuple[int, int]):
-        """Ustawia punkt odradzania duchów.
-        
-        :param spawn: Punkt odradzania duchów w postaci krotki (x, y).
-        :type spawn: tuple[int, int]
-        """
-        cls.ghost_spawn = spawn
-
-
-    @classmethod
-    def spawn(cls, actor : Actor):
-        from src.pacman.game_core import GameCore
+    def spawn(cls, actor : Actor, now = False):
         """Spawnuje aktora w odpowiednim punkcie.
         :param actor: Aktor, który ma zostać zrespawnowany.
         :type actor: Actor
         """
-        
-        spawn_point = cls._get_spawn_point(actor)
 
-        # Sprawdź pozycję gracza
-        from src.pacman.actors.pacman import Pacman
-
-        pacman : Pacman = Pacman.get_instance()
-
-        actor.set_position(spawn_point)
-        actor.on_spawn()
+        if isinstance(actor, Ghost):
+            GhostSpawner._spawn(actor, now)
+        elif isinstance(actor, Pacman):
+            PacmanSpawner._spawn(actor, now)
         
     def _get_color(self):
         return None
     
     def _get_filled_ratio(self):
         return None
-    
-    @classmethod
-    def _get_spawn_point(cls, actor: Actor) -> Tuple[int, int]:
-        """Zwraca punkt odradzania dla danego aktora.
-        :return: Punkt odradzania w postaci krotki (x, y).
-        :rtype: tuple[int, int]
-        """
-        if actor.name == "Pacman":
-            return cls.pacman_spawn
-        else:
-            return cls.ghost_spawn
-
-
 
     def _get_named_layer(self):
         return 'map'
-
-    def to_csv_line(self):
-        return [
-            str(self.maze.pacman_spawn[0]),
-            str(self.maze.pacman_spawn[1]),
-            str(self.maze.ghost_spawn[0]),
-            str(self.maze.ghost_spawn[1])
-        ]
-
-    def get_csv_header(self):
-        return ['PacmanSpawnX', 'PacmanSpawnY', 'GhostSpawnX', 'GhostSpawnY']
     
     def copy(self):
         # W sumie to nas nie interesuje, czy się coś tutaj zmieni
-        return [self.pacman_spawn, self.ghost_spawn]
+        return []
 
-class _PacmanSpawner(SpawnManager):
+class PacmanSpawner(SpawnManager):
     """Klasa reprezentująca punkt odradzania Pacmana w labiryncie.
     Nie należy jej wywoływać do tworzenia Pacmana, do tego służy klasa SpawnManager.
     """
     def __init__(self, position, parent):
-        SpawnManager.set_pacman_spawn(position)
+        PacmanSpawner.pac_spawn = position
+        PacmanSpawner.maze : Maze = parent
+        super().__init__(position, parent)
+
     
     def draw(self):
         """Nic nie rysuj
         """
         pass
-class _GhostSpawner(SpawnManager):
+    
+    @staticmethod
+    def _spawn(obj : Actor, now : bool):
+        obj.set_position(PacmanSpawner.pac_spawn)
+        obj.on_spawn()
+
+
+class GhostSpawner(SpawnManager, Collidable):
     """Klasa reprezentująca punkt odradzania duchów w labiryncie.
     Nie należy jej wywoływać do tworzenia duchów, do tego służy klasa SpawnManager.
     """
     def __init__(self, position, parent):
-        SpawnManager.set_ghost_spawn(position)
+        from src.pacman.game_core import GameCore
+        
+        
+
+        
+        GhostSpawner.ghost_spawn = position
+        GhostSpawner.spawn_queue = deque()
+        GhostSpawner.maze : Maze = parent
+        GhostSpawner.cfg : GameConfig = GameCore.get_main_instance().get_game_config()
+        GhostSpawner.prev_ghost = None
+        super().__init__(position, parent)
 
     def _get_color(self):
-        from src.pacman.game_core import GameCore
-        return GameCore.get_main_instance().get_game_config().GHOST_SPAWNER_COLOR
+        return None
     def _get_filled_ratio(self):
-        from src.pacman.game_core import GameCore
-        return GameCore.get_main_instance().get_game_config().GHOST_SPAWNER_FILLED_RATIO
+        return None
     def _get_named_layer(self):
         return 'map'
     
-MazeObject.character_to_class_mapping['P'] = _PacmanSpawner
-MazeObject.character_to_class_mapping['G'] = _GhostSpawner
+    @staticmethod
+    def _release_ghost(_):
+        q = GhostSpawner.spawn_queue
+        if len(q) == 0:
+            return
+        
+        obj : Ghost = q.popleft()
+        obj.set_position(GhostSpawner.ghost_spawn)
+        obj.on_leave_ghost_pen()
+        GhostSpawner.prev_ghost = obj
+
+    @staticmethod 
+    def _timer_wrapper():
+        cfg = GhostSpawner.cfg
+        start_time_timer(cfg.SPAWNG_EXIT_TIME, GhostSpawner._release_ghost, 4)
+
+
+    @staticmethod
+    def _spawn(obj : Actor, now : bool):
+        obj : Ghost = obj
+        q = GhostSpawner.spawn_queue
+
+        pos = GhostSpawner.ghost_spawn
+
+        if not now:
+            pos = GhostSpawner.maze.shift_position(pos, Direction.DOWN, 1)
+            GhostSpawner.spawn_queue.append(obj)
+        obj.set_position(pos)
+        obj.direction = Direction.LEFT
+        obj.on_spawn()
+
+        if now:
+            obj.on_leave_ghost_pen()
+        
+        if not now and len(q) == 1:
+            # W tym przypadku to manualnie wypuszczamy ducha
+            GhostSpawner._timer_wrapper()
+
+
+    
+    def on_exit(self, obj):
+        if id(GhostSpawner.prev_ghost) == id(obj):
+            GhostSpawner.prev_ghost = None
+            GhostSpawner._timer_wrapper()
+    
+MazeObject.character_to_class_mapping['P'] = PacmanSpawner
+MazeObject.character_to_class_mapping['G'] = GhostSpawner

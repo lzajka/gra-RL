@@ -55,6 +55,7 @@ class Player(APlayer):
         """
         # Mimo, że ta funkcja jest po to aby podejmować decyzję, można wsadzić tutaj część logiki gry, która mogłaby być przydatna podczas trenowania modelu
         # Klasy graczy, będą odpowiedzialne, ze inicjalizację aktorów
+        state : GameState = _state
         if self.move_number == 0:
             self.getGame().set_level(1, schedule=GhostSchedule(1))
         
@@ -65,20 +66,16 @@ class Player(APlayer):
 
         if self.move_number == 0:
             SpawnManager.spawn(self.pacman)
-        
-        elif self.move_number == 5:
-            self.blinky = Blinky(self.getGame().maze)
+            self.blinky = Blinky(self.getGame().maze, True)
             SpawnManager.spawn(self.blinky)
-
-        elif self.move_number == 10:
             self.pinky = Pinky(self.getGame().maze)
             SpawnManager.spawn(self.pinky)
 
-        elif self.move_number == 15:
+        elif self.move_number == 60*7:
             self.inky = Inky(self.getGame().maze)
             SpawnManager.spawn(self.inky)
         
-        elif self.move_number == 20:
+        elif self.move_number == 60*15:
             self.clyde = Clyde(self.getGame().maze)
             SpawnManager.spawn(self.clyde)
 

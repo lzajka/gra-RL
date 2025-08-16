@@ -279,6 +279,9 @@ class Ghost(Actor, Collidable):
         #self.direction = self.future_direction
         # Przywróć poprzednią pozycję
         #self.set_position(spawn_pos)
+    
+    def on_leave_ghost_pen(self):
+        self.direction = Direction.LEFT
         
     def on_enter(self, obj):
         from src.pacman.actors.pacman import Pacman

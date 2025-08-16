@@ -127,15 +127,6 @@ class Actor(MazeObject):
         else:
             self.apply_speed_status_effect(state)
 
-    def get_spawn_point(self) -> Tuple[int, int]:
-        """Zwraca punkt startowy aktora w postaci krotki (x, y).
-        :param maze: Obiekt labiryntu, w którym aktor będzie się poruszał.
-        :type maze: Maze
-        :return: Punkt startowy aktora.
-        :rtype: Tuple[int, int]
-        """
-        from pacman.maze.objects.spawn_manager import SpawnManager
-        return SpawnManager._get_spawn_point(self)
     
     def set_speed_multiplier(self, multiplier : Decimal):
         """Ustawia mnożnik prędkości aktora. Ostateczna prędkość jest wynikiem mnożenia prędkości podstawowej oraz mnożnika.
