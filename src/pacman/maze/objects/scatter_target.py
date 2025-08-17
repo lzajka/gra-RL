@@ -9,7 +9,6 @@ class ScatterTarget(Wall):
     """Reprezentacja punktu scatter w labiryncie Pacmana.
     Zachowuje się identycznie do ściany, z tą różnicą, że zapisuje pozycje punktu.
     """
-    name = None
     def __init__(self, position: tuple[int, int], parent):
         """Inicjalizuje obiekt na podstawie jego pozycji.
 
@@ -46,8 +45,13 @@ def create_scatter_target(ghost_name : str) -> Wall:
     })
 
 
-
 MazeObject.character_to_class_mapping['p'] = create_scatter_target('pinky')
 MazeObject.character_to_class_mapping['b'] = create_scatter_target('blinky')
 MazeObject.character_to_class_mapping['c'] = create_scatter_target('clyde')
 MazeObject.character_to_class_mapping['i'] = create_scatter_target('inky')
+
+from src.general import reload_functions
+def _reload():
+    global scatter_targets
+    scatter_targets = {}
+reload_functions.append(_reload)

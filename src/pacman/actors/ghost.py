@@ -283,7 +283,7 @@ class Ghost(Actor, Collidable):
         """Zabija ducha. Po zabiciu duch wraca na spawn.
         """
         from src.pacman.maze.objects import SpawnManager
-        f = lambda _ : SpawnManager.spawn(self)
+        f = lambda _ : SpawnManager.spawn(self, False, False)
         reward = self._game_config.GHOST_EAT_REWARD
         self._game_state.score += reward
         self._is_dead = True
@@ -309,19 +309,11 @@ class Ghost(Actor, Collidable):
     def toggle_tunnel(self):
         self.in_tunnel = not self.in_tunnel
 
+    @staticmethod
+    def _reload1():
+        Ghost.ghosts = []
 
-
-            
-
-
-
-
-
-
-    
-        
-        
-        
-
-
-            
+from src.general import reload_functions
+def _reload():
+    Ghost._reload1()
+reload_functions.append(_reload)            

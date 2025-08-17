@@ -90,3 +90,12 @@ def start_time_timer(seconds, func, priority = 0) -> int:
 
     _timer_mappings[timer_id] = hook_id
     _timer_priorities[timer_id] = priority
+
+from src.general import reload_functions
+def _reload():
+    global _timer_mappings, _freed_mappings, _timer_priorities
+    _timer_mappings = []
+    _freed_mappings = []
+    _timer_priorities = []
+    
+reload_functions.append(_reload)

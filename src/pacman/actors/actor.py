@@ -41,6 +41,18 @@ class Actor(MazeObject):
     Aktorzy mogą poruszać się po labiryncie i posiadają stan.
     """
     registered_collision_hooks = False
+    _all_subs : List['Actor'] = []
+
+    @staticmethod
+    def _reload_all():
+        Actor.registered_collision_hooks = False
+        for s in Actor._all_subs:
+            s._reload()
+        Actor._all_subs = []
+    
+    @classmethod
+    def _reload(cls):
+        cls._main_instance = None
 
     def __init__(self, parent : Maze, respawn_interval: int = 0, name: str = "Actor", spawn: Tuple[int, int] = None, base_speed=None):
         """Inicjalizuje aktora na podstawie punktu startowego i interwału respawnu.
@@ -78,6 +90,7 @@ class Actor(MazeObject):
         self._level = self._game_state.level
         self._is_tunneling = False
         self.__class__._main_instance = self 
+        Actor._all_subs.append(self)
         super().__init__(spawn, parent)
 
     @property
@@ -399,4 +412,10 @@ class Actor(MazeObject):
 
     
 
-
+from src.general import reload_functions
+def _reload():
+    global detected_collisions, detected_last_time
+    detected_collisions = set()
+    detected_last_time = set()
+    Actor._reload_all()
+reload_functions.append(_reload)

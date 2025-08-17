@@ -107,6 +107,9 @@ class GameCore(AGameCore, UsesMaze):
         :return: Stan gry po restarcie.
         :rtype: GameConfig
         '''
+        from src.general import reload_all
+        reload_all()
+        return super().restart(config)
         if config is None:
             config = GameConfig()
         self.config = config

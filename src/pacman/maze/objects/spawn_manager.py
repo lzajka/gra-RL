@@ -57,6 +57,17 @@ class SpawnManager(MazeObject):
     def copy(self):
         # W sumie to nas nie interesuje, czy się coś tutaj zmieni
         return []
+    
+    @classmethod
+    def _reload(cls):
+        cls.spawn_pos = None
+        cls.maze = None
+        cls.cfg = None
+        cls._reload1()
+
+    @staticmethod
+    def _reload1():
+        pass
 
 class PacmanSpawner(SpawnManager):
     """Klasa reprezentująca punkt odradzania Pacmana w labiryncie.
@@ -88,6 +99,11 @@ class GhostSpawner(SpawnManager, Collidable):
         GhostSpawner.spawn_queue = deque()
         GhostSpawner.prev_ghost = None
         super().__init__(position, parent)
+    
+    @staticmethod
+    def _reload1():
+        GhostSpawner.spawn_queue = None
+        GhostSpawner.prev_ghost = None
 
     def _get_color(self):
         return None
@@ -157,3 +173,10 @@ class GhostSpawner(SpawnManager, Collidable):
     
 MazeObject.character_to_class_mapping['P'] = PacmanSpawner
 MazeObject.character_to_class_mapping['G'] = GhostSpawner
+
+from src.general import reload_functions
+def _reload():
+    global scatter_targets
+    scatter_targets = {}
+    SpawnManager._reload()
+reload_functions.append(_reload)
