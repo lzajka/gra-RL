@@ -243,6 +243,8 @@ class Actor(MazeObject):
             self.direction = self.direction.add_rotation(Direction.DOWN)
             self.reverse_direction = False
 
+
+    #@pysnooper.snoop('next_step.log', watch=('self.name'))
     def get_next_step(self, position : Position = None, precise_position : PrecisePosition = None, jump : Decimal = None, depth = 0) -> Tuple[Decimal, Decimal]:
         """Zwraca następny krok aktora w postaci krotki (x, y).
         Respektuje metodę pause
@@ -264,7 +266,6 @@ class Actor(MazeObject):
             precise_position = self.get_precise_position()
         if jump is None:
             jump = self.speed
-
         changed_blocks = self.prev_block != position
 
         if jump >= 1: 
@@ -291,22 +292,31 @@ class Actor(MazeObject):
 
         # Jeżeli już było wykonywane dalszej części nie należy sprawdzać
 
-        # Obsłuż zmiany kierunków
 
-        intersection_crossed = self._check_if_intersection_crossed(precise_position, future_pos)
-
-        if intersection_crossed >= 0 and depth == 0:
-            intersection_pos = Actor._get_path_center_block(precise_position, future_pos)
-            self.on_intersection()
 
         # Zaktualizuj poprzedni blok
 
         if changed_blocks:
             self.prev_block = self.get_position()
 
+
+        # Ponieważ duch musi myśleć o 1 krok do przodu, to jeżeli następnym krokiem będzie skrzyżowanie, to wybieramy kierunek.
+        # Aby to zrobić w ostatniej chwili sprawdzam, czy następna pozycja znajduje się w innym bloku
+        future_block = TupleOperations.round_tuple(future_pos)
+        is_about_to_change_block = future_block != position
+        if is_about_to_change_block and depth == 0 and self.maze.is_intersection(future_block):
+            self.select_future_direction()
+
+        # Obsłuż zmiany kierunków
+
+        intersection_crossed = self._check_if_intersection_crossed(precise_position, future_pos)
+        if intersection_crossed >= 0 and depth == 0:
+            intersection_pos = Actor._get_path_center_block(precise_position, future_pos)
+            self.on_intersection()
+        
+
         if intersection_crossed > 0 and depth == 0:
             return self.get_next_step(intersection_pos, tuple([Decimal(intersection_pos[0]), Decimal(intersection_pos[1])]), intersection_crossed, depth + 1)
-
         
         if self.maze.check_wall(next_block) and is_touching:
             future_pos = self.on_hit_wall(precise_position, future_pos, next_block)
@@ -315,14 +325,8 @@ class Actor(MazeObject):
         if self.maze.is_intersection(position) and depth == 0 and future_pos == position:
             self.on_intersection()
 
-        # Ponieważ duch musi myśleć o 1 krok do przodu, to jeżeli następnym krokiem będzie skrzyżowanie, to wybieramy kierunek.
-        # Aby to zrobić w ostatniej chwili sprawdzam, czy następna pozycja znajduje się w innym bloku
-        future_block = TupleOperations.round_tuple(future_pos)
 
-        is_about_to_change_block = future_block != position
 
-        if is_about_to_change_block and depth == 0 and self.maze.is_intersection(future_block):
-            self.select_future_direction()
 
         return future_pos
     def kill(self):
