@@ -58,17 +58,15 @@ class Player(APlayer):
         state : GameState = _state
         if self.move_number == 0:
             self.getGame().set_level(1, schedule=GhostSchedule(1))
-        
-        if self.pacman is None:
-            # Inicjalizacja Pacmana, jeżeli jeszcze nie został zainicjalizowany
             self.pacman = Pacman(self.getGame().maze)
+            self.blinky = Blinky(self.getGame().maze)
+            self.pinky = Pinky(self.getGame().maze)
+            self.clyde = Clyde(self.getGame().maze)
         
 
         if self.move_number == 0:
             SpawnManager.spawn(self.pacman)
-            self.blinky = Blinky(self.getGame().maze, True)
-            SpawnManager.spawn(self.blinky)
-            self.pinky = Pinky(self.getGame().maze)
+            SpawnManager.spawn(self.blinky, True)
             SpawnManager.spawn(self.pinky)
 
         elif self.move_number == 60*7:
@@ -76,7 +74,6 @@ class Player(APlayer):
             SpawnManager.spawn(self.inky)
         
         elif self.move_number == 60*15:
-            self.clyde = Clyde(self.getGame().maze)
             SpawnManager.spawn(self.clyde)
 
         # Obsługa zdarzeń
