@@ -14,7 +14,12 @@ class Point(MazeObject, Collidable):
         """
         from src.pacman.game_core import GameCore
         from src.pacman import GameConfig
-        self.cfg = GameCore.get_main_instance().get_game_config()
+        from src.pacman.game_state import GameState
+        game = GameCore.get_main_instance()
+        self.cfg = game.get_game_config()
+
+        self._state : GameState = game.get_current_state()
+        self._state.max_points += 1
         super().__init__(position, parent)
  
     
@@ -49,6 +54,16 @@ class Point(MazeObject, Collidable):
     
     def _eat_length(self):
         return 1
+    
+    def _check_if_all_collected(self):
+        """Metoda sprawdza czy wszystkie zbieralne punkty zostały zebrane.
+        """
+        collected = self._state.collected
+        max_points = self._state.max_points
+
+        if sum(collected.values()) == max_points:
+            self._state.is_game_over = True
+            self._state.score += self.cfg.WIN_REWARD
 
     def on_enter(self, obj):
         from src.pacman.actors.pacman import Pacman
@@ -62,6 +77,7 @@ class Point(MazeObject, Collidable):
 
         gs.score += self.get_reward()
         gs.collected[self.get_point_type()] += 1
+        self._check_if_all_collected()
         pacman.pause(self._eat_length())
         self.destroy()
 
