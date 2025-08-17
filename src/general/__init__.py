@@ -4,5 +4,6 @@ from .agame_stats_display import AGameStatsDisplay
 from .aplayer import APlayer
 from .direction import Direction
 from .drawable import Drawable
+from .reload import reload_functions, reload_all
 
-__all__ = ['AGameCore', 'AGameState', 'AGameStatsDisplay', 'APlayer', 'Direction', 'Drawable']
+__all__ = ['AGameCore', 'AGameState', 'AGameStatsDisplay', 'APlayer', 'Direction', 'Drawable', 'reload_functions', 'reload_all']
