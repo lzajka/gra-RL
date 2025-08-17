@@ -77,6 +77,7 @@ class Actor(MazeObject):
         self._game_state : GameState = game.get_current_state()
         self._level = self._game_state.level
         self._is_tunneling = False
+        self.__class__._main_instance = self 
         super().__init__(spawn, parent)
 
     @property
@@ -120,14 +121,13 @@ class Actor(MazeObject):
         return self.multiplier * self._base_speed
 
     @classmethod
-    @abstractmethod
-    def get_instance() -> 'Actor':
+    def get_instance(cls) -> 'Actor':
         """Zwraca instancję aktora.
 
         :return: Instancja aktora.
         :rtype: Actor
         """
-        pass
+        return cls._main_instance
 
     @abstractmethod
     def get_target() -> Tuple[int, int]:

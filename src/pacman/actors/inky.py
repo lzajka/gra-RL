@@ -8,15 +8,7 @@ class Inky(Ghost):
 
     def __init__(self, *args, **kwargs):
         kwargs['name'] = 'inky'
-        Inky.main_instance = self
         super().__init__(*args, **kwargs)
-        
-    @classmethod 
-    def get_instance(cls):
-        """Zwraca instancję ducha
-        """
-        return cls.main_instance
-        
 
     def get_chase_position(self):
         """Zwraca pozycję chase dla ducha Inky."""

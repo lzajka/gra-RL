@@ -10,14 +10,6 @@ class Pinky(Ghost):
     def __init__(self, *args, **kwargs):
         kwargs['name'] = 'pinky'
         super().__init__(*args, **kwargs)      
-        Pinky.main_instance = self  
-
-    @classmethod 
-    def get_instance(cls):
-        """Zwraca instancję ducha
-        """
-        return cls.main_instance
-        
 
     def get_chase_position(self) -> Tuple[int, int]:
         """Zwraca pozycję chase dla ducha pinky.

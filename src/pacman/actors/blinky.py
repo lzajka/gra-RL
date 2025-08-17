@@ -9,14 +9,7 @@ class Blinky(Ghost):
 
     def __init__(self, *args, **kwargs):
         kwargs['name'] = 'blinky'
-        Blinky.main_instance = self
         super().__init__(*args, **kwargs)
-        
-    @classmethod 
-    def get_instance(cls):
-        """Zwraca instancję ducha
-        """
-        return cls.main_instance
 
     def _reset_rng(self):
         from random import Random

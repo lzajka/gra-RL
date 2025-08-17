@@ -12,13 +12,6 @@ class Pacman(Actor):
     def __init__(self, maze : Maze, respawn_interval: int = 0):
         super().__init__(maze, respawn_interval, "Pacman", (0,0))
         self.prepicked_direction = Direction.RIGHT
-        Pacman.main_instance = self
-
-    @classmethod 
-    def get_instance(cls):
-        """Zwraca instancję Pacmana
-        """
-        return cls.main_instance
     
     def _get_speed_multiplier(self):
         level = self._game_state.level
