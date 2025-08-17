@@ -3,6 +3,7 @@ from src.general.direction import Direction
 from src.general.maze import Maze
 from src.pacman.game_core import GameCore
 from decimal import Decimal
+from src.pacman.game_config import GameConfig
 
 class Pacman(Actor):
     """Klasa reprezentująca Pacmana, dziedzicząca po klasie Actor.
@@ -12,6 +13,9 @@ class Pacman(Actor):
     def __init__(self, maze : Maze, respawn_interval: int = 0):
         super().__init__(maze, respawn_interval, "Pacman", (0,0))
         self.prepicked_direction = Direction.RIGHT
+        gc = GameCore.get_main_instance()
+        self._game_config : GameConfig = gc.get_game_config()
+
     
     def _get_speed_multiplier(self):
         level = self._game_state.level
@@ -95,7 +99,11 @@ class Pacman(Actor):
     
 
     
-        
+    def kill(self):
+        """Zabija pacmana wywołując koniec gry.
+        """
+        self._game_state.score += self._game_config.DEATH_REWARD
+        self._game_state.is_game_over = True
     
         
 
