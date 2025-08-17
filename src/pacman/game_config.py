@@ -9,6 +9,7 @@ class GameConfig:
     STARTING_LIVES      = 3
 
     DEATH_REWARD        = -10
+    WIN_REWARD          = 1000
     FRUIT_REWARD        = 10
     GHOST_EAT_REWARD    = 100
     SURVIVAL_REWARD     = 0
