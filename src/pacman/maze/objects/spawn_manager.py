@@ -12,7 +12,6 @@ class SpawnManager(MazeObject):
     """Klasa odpowiedzialna za zarządzanie odradzaniem pacmana i duchów w labiryncie.
     """
 
-
     def __init__(self, pos, parent):
         """Inicjalizuje instancję klasy SpawnManager.
         
@@ -20,16 +19,21 @@ class SpawnManager(MazeObject):
         :type pos: tuple[int, int]
         """
         super().__init__(pos, parent)
+        from src.pacman.game_core import GameCore
+
+        self.__class__.spawn_pos = pos
+        self.__class__.maze = parent
+        self.__class__.cfg = GameCore.get_main_instance().get_game_config()
 
     @classmethod
-    def spawn(cls, actor : Actor, now = False):
+    def spawn(cls, actor : Actor, now = False, first_time = True):
         """Spawnuje aktora w odpowiednim punkcie.
         :param actor: Aktor, który ma zostać zrespawnowany.
         :type actor: Actor
         """
 
         if isinstance(actor, Ghost):
-            GhostSpawner._spawn(actor, now)
+            GhostSpawner._spawn(actor, now, first_time)
         elif isinstance(actor, Pacman):
             PacmanSpawner._spawn(actor, now)
 
@@ -59,13 +63,11 @@ class PacmanSpawner(SpawnManager):
     Nie należy jej wywoływać do tworzenia Pacmana, do tego służy klasa SpawnManager.
     """
     def __init__(self, position, parent):
-        PacmanSpawner.pac_spawn = position
-        PacmanSpawner.maze : Maze = parent
         super().__init__(position, parent)
 
     @staticmethod
     def _get_spawn():
-        return PacmanSpawner.pac_spawn
+        return PacmanSpawner.spawn_pos
 
     def draw(self):
         """Nic nie rysuj
@@ -74,7 +76,7 @@ class PacmanSpawner(SpawnManager):
     
     @staticmethod
     def _spawn(obj : Actor, now : bool):
-        obj.set_position(PacmanSpawner.pac_spawn)
+        obj.set_position(PacmanSpawner.spawn_pos)
         obj.on_spawn()
 
 
@@ -82,16 +84,8 @@ class GhostSpawner(SpawnManager, Collidable):
     """Klasa reprezentująca punkt odradzania duchów w labiryncie.
     Nie należy jej wywoływać do tworzenia duchów, do tego służy klasa SpawnManager.
     """
-    def __init__(self, position, parent):
-        from src.pacman.game_core import GameCore
-        
-        
-
-        
-        GhostSpawner.ghost_spawn = position
+    def __init__(self, position, parent):        
         GhostSpawner.spawn_queue = deque()
-        GhostSpawner.maze : Maze = parent
-        GhostSpawner.cfg : GameConfig = GameCore.get_main_instance().get_game_config()
         GhostSpawner.prev_ghost = None
         super().__init__(position, parent)
 
@@ -104,7 +98,7 @@ class GhostSpawner(SpawnManager, Collidable):
     
     @staticmethod
     def _get_spawn():
-        return GhostSpawner.ghost_spawn
+        return GhostSpawner.spawn_pos
 
     @staticmethod
     def _release_ghost(_):
@@ -113,7 +107,7 @@ class GhostSpawner(SpawnManager, Collidable):
             return
         
         obj : Ghost = q.popleft()
-        obj.set_position(GhostSpawner.ghost_spawn)
+        obj.set_position(GhostSpawner.spawn_pos)
         obj.on_leave_ghost_pen()
         GhostSpawner.prev_ghost = obj
 
@@ -128,7 +122,7 @@ class GhostSpawner(SpawnManager, Collidable):
         obj : Ghost = obj
         q = GhostSpawner.spawn_queue
 
-        pos = GhostSpawner.ghost_spawn
+        pos = GhostSpawner.spawn_pos
 
         if not now:
             pos = GhostSpawner.maze.shift_position(pos, Direction.DOWN, 1)
