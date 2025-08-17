@@ -29,7 +29,6 @@ class GameCore(AGameCore, UsesMaze):
         self.__class__._main_instance = self
         GameCore.maze : Maze = None
         self.game_state : GameState = None
-        self.free_hooks = []
         self._ghost_schedule = None
 
     @classmethod
@@ -112,6 +111,8 @@ class GameCore(AGameCore, UsesMaze):
             config = GameConfig()
         self.config = config
         self.next_frame_hooks = []
+        self.free_hooks = []
+        
 
         for _ in range(HOOK_PRIORITY_COUNT):
             self.free_hooks.append(Queue())
