@@ -125,7 +125,7 @@ class GameCore(AGameCore, UsesMaze):
         self.cell_size = None
         self.maze = Maze()
         self.maze.load_maze(self.config.MAZE_FILE)
-        self.game_state = GameState(self.maze, self.config.STARTING_LIVES)
+        self.game_state.maze = self.maze
         self.game_state.round += 1
         
         return self.game_state

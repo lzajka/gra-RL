@@ -6,7 +6,7 @@ from copy import deepcopy
 
 
 class GameState(AGameState):
-    def __init__(self, maze : Maze, starting_lives: int = 3):
+    def __init__(self, starting_lives: int = 3):
         """Inicjalizuje stan gry.
 
         :param maze: Labirynt, w którym rozgrywa się gra.
@@ -19,17 +19,17 @@ class GameState(AGameState):
         self.score = 0
         self.collected = {
             'point': 0,
-            'energizer': 0,
-            'fruit': 0
+            'energizer': 0
         }
         self.max_points = 0
         self.fps = 60
         self.events = []
-        self.maze = maze
+        self.maze = None
         self.level = 1
         self.round = 0
         self.frame = 0
         self.time_elapsed = 0.0                     # Czas w sekundach
+    
 
     def to_training_array(self) -> List[float]:
         """Zwraca stan gry jako tablicę do treningu.
@@ -57,6 +57,7 @@ class GameState(AGameState):
         gsc.level = self.level
         gsc.time_elapsed = self.time_elapsed
         gsc.frame = self.frame
+        gsc.max_points = self.max_points
 
     def to_list(self):
         return [
