@@ -109,7 +109,6 @@ class GameCore(AGameCore, UsesMaze):
         '''
         from src.general import reload_all
         reload_all()
-        return super().restart(config)
         if config is None:
             config = GameConfig()
         self.config = config
