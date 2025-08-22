@@ -1,5 +1,7 @@
+from functools import cached_property
 from src.general.maze import MazeObject
 from src.pacman.game_config import GameConfig
+from src.pacman.game_state import GameState
 
 
 class Wall(MazeObject):
@@ -7,17 +9,22 @@ class Wall(MazeObject):
     Ściana jest obiektem statycznym, który nie zmienia swojej pozycji ani stanu w trakcie gry.
     """
 
-    def __init__(self, position: tuple[int, int], parent):
+    def __init__(self, position: tuple[int, int], state):
         """Inicjalizuje obiekt ściany na podstawie jego pozycji.
 
         :param position: Pozycja ściany w labiryncie w postaci krotki (x, y).
         :type position: tuple[int, int]
         """
-        super().__init__(position, parent)
-            
+        self._state : GameState = state
+        super().__init__(position, False)
+        
+    @cached_property
+    def _maze(self):
+        return self._state.maze
+    
     def _draw(self):
         """Metoda zwracająca reprezentację obiektu w formie graficznej."""
-        
+
         pass
 
     def to_csv_line():
@@ -33,10 +40,6 @@ class Wall(MazeObject):
     
     def _get_named_layer(self):
         return 'map'
-    
-    def copy(self):
-        s = Wall(self.position)
-        return s
 
 
 MazeObject.character_to_class_mapping['#'] = Wall

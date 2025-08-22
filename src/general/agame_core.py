@@ -69,7 +69,8 @@ class AGameCore(ABC):
         pass
     
     def make_move(self, move) -> Tuple[AGameState, bool]:
-        '''Metoda wykonuje ruch'''
+        '''Metoda wykonuje ruch
+        '''
         return self.on_make_move(move)
 
     @abstractmethod

@@ -6,30 +6,26 @@ class Inky(Ghost):
     """Reprezentuje ducha Inky w grze Pacman.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         kwargs['name'] = 'inky'
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
     def get_chase_position(self):
         """Zwraca pozycję chase dla ducha Inky."""
         from src.pacman.actors.pacman import Pacman
         from src.pacman.actors.blinky import Blinky
-        pacman: Pacman = Pacman.get_instance()
-        blinky : Blinky = Blinky.get_instance()
+        pacman: Pacman = Pacman.get_instance(self._state)
+        blinky : Blinky = Blinky.get_instance(self._state)
 
         if pacman.direction == Direction.UP:
-            pacman_offset = self.maze.shift_position(pacman.get_position(), Direction.LEFT, 2)
+            pacman_offset = self._maze.shift_position(pacman.get_position(), Direction.LEFT, 2)
             
-        pacman_offset = self.maze.shift_position(pacman.get_position(), pacman.direction, 2)
+        pacman_offset = self._maze.shift_position(pacman.get_position(), pacman.direction, 2)
         blinky_pos = blinky.get_position()
         offset = (blinky_pos[0] - pacman_offset[0], blinky_pos[1] - pacman_offset[1])
         future_pos = (pacman_offset[0] + offset[0] * 2, pacman_offset[1] + offset[1] * 2)
 
         return future_pos
-    
-    def copy(self):
-        """Tworzy kopię ducha Inky."""
-        return None
     
     def _get_normal_color(self):
         from src.pacman.game_core import GameCore

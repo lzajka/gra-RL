@@ -1,3 +1,4 @@
+from functools import cached_property
 from src.general.maze import MazeObject, Collidable
 from src.pacman.actors import Actor
 
@@ -7,16 +8,14 @@ class Tunnel(Collidable, MazeObject):
 
     touch_count = dict()
     
-    def __init__(self, position, parent):
-        super().__init__(position, parent)
+    def __init__(self, position, state, is_copy = False):
+        self._state = state
+        super().__init__(position, is_copy)
+
 
 
     def _get_color(self):
         pass
-
-    def copy(self):
-        """Ponieważ ten obiekt się nie zmienia, można zwrócić self bez tworzenia kopii."""
-        return self
     
     def _get_filled_ratio(self):
         return None
@@ -34,6 +33,10 @@ class Tunnel(Collidable, MazeObject):
         if not isinstance(obj, Actor): return
         a : Actor = obj
         a.is_tunneling = True
+    
+    @cached_property
+    def _maze(self):
+        return self._state.maze
 
         
 

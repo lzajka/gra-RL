@@ -7,9 +7,9 @@ class Blinky(Ghost):
     """Reprezentuje ducha blinky w grze Pacman.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         kwargs['name'] = 'blinky'
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
     def _reset_rng(self):
         from random import Random
@@ -22,15 +22,11 @@ class Blinky(Ghost):
         :rtype: Tuple[int, int]
         """
         from src.pacman.actors.pacman import Pacman
-        pacman : Pacman = Pacman.get_instance()
+        pacman : Pacman = Pacman.get_instance(self._state)
         current_pos = pacman.get_position()
 
         return current_pos
 
-    
-    def copy(self):
-        """Tworzy kopię ducha blinky."""
-        return None
     
     def _get_normal_color(self):
         from src.pacman.game_core import GameCore

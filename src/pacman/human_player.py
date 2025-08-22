@@ -18,6 +18,7 @@ class Player(APlayer):
         self.pacman : Pacman = None
         self.blinky : Blinky = None
         self.inky : Inky = None
+        self.prev_state_copy = False
 
 
     def getGame(self):
@@ -36,13 +37,17 @@ class Player(APlayer):
         controls = [pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT]
         selected_dir = None
         for event in events:
-            if event.type == pygame.KEYDOWN and event.key in controls:
+            is_keydown = event.type == pygame.KEYDOWN
+            if is_keydown and event.key in controls:
                 selected_dir = Direction(event.key)
+            elif is_keydown and event.key == pygame.K_d:
+                self.maze_utils.debug_display()
             elif event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 return [Direction.UP, False]
         return [selected_dir, True]
             
-        
+    def can_make_a_decision(self, state : GameState):
+        return True
 
     
     def make_decision(self, _state):
@@ -53,24 +58,26 @@ class Player(APlayer):
         :return: Krotka zawierająca kierunek ruchu i informację o kontynuacji gry.
         :rtype: tuple[Direction, bool]
         """
+        state : GameState = _state
+        from src.pacman.agents._base import MazeUtils
+        #self.maze_utils.debug_display()
         # Mimo, że ta funkcja jest po to aby podejmować decyzję, można wsadzić tutaj część logiki gry, która mogłaby być przydatna podczas trenowania modelu
         # Klasy graczy, będą odpowiedzialne, ze inicjalizację aktorów
-        state : GameState = _state
         if self.move_number == 0:
-            self.getGame().set_level(1, schedule=GhostSchedule(1))
-            self.pacman = Pacman(self.getGame().maze)
-            self.blinky = Blinky(self.getGame().maze)
-            self.pinky = Pinky(self.getGame().maze)
-            self.clyde = Clyde(self.getGame().maze)
-        
-
-        if self.move_number == 0:
+            state.set_level(1, schedule=GhostSchedule(1))
+            self.pacman = Pacman(state=state)
+            self.blinky = Blinky(state=state)
+            self.pinky = Pinky(state=state)
+            self.inky = Inky(state=state)
+            self.clyde = Clyde(state=state)
+            self.maze_utils = MazeUtils(state)
             SpawnManager.spawn(self.pacman)
             SpawnManager.spawn(self.blinky, True)
             SpawnManager.spawn(self.pinky)
+        
+        self.maze_utils.update(self.pacman.get_position())
 
-        elif self.move_number == 60*7:
-            self.inky = Inky(self.getGame().maze)
+        if self.move_number == 60*7:
             SpawnManager.spawn(self.inky)
         
         elif self.move_number == 60*15:

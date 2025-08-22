@@ -20,6 +20,7 @@ class APlayer(ABC):
         self.csv = None
         self.round_number = 0
         self.move_number = 0
+        self.prev_state_copy = True
 
         stats_path = args.output_stats
 
@@ -58,6 +59,10 @@ class APlayer(ABC):
             else:
                 raise KeyError(f'Nieznany klucz {key} w konfiguracji.')
         return default_config
+    
+    def can_make_a_decision(self, state):
+        return True
+
 
     def play(self, config = None):
         is_running = True
@@ -67,30 +72,34 @@ class APlayer(ABC):
             state = self.game.restart(config)
             # Zapisz stan do pliku
             self.write_stats(state)
-
+            old_state = state
 
             while not state.is_game_over and is_running:
-                # Podejmij decyzję
-                [player_move, is_running] = self.make_decision(state)
-                if not is_running: break
-                self.on_decision_made(state, player_move)
+                # Sprawdź czy można podjąć decyzję
+                can_decide = self.can_make_a_decision(state)
+                player_move = None
+                if can_decide:
+                    [player_move, is_running] = self.make_decision(state)
+                    # Podejmij decyzję
+                    if not is_running: break
+                    self.on_decision_made(state, player_move)
 
-                # Sprawdź czy gracz nie podjął decyzji o zakończeniu gry
-                if not is_running:
-                    break
-                # Skopiuj stary stan
-                old_state = state.copy()
+                    # Sprawdź czy gracz nie podjął decyzji o zakończeniu gry
+                    if not is_running:
+                        break
 
-                # Wykonaj ruch
                 state = self.game.make_move(player_move)
-                self.on_move_made(old_state, state, player_move)
 
+                if can_decide:
+                    self.on_move_made(old_state, state, player_move)
+                    # Zapisz stan do pliku
+                    self.write_stats(state)
+                    # Zwiększ numer ruchu
+                    self.move_number += 1
+                    # Skopiuj stary stan
 
-                # Zapisz stan do pliku
-                self.write_stats(state)
+                    if self.prev_state_copy: old_state = state.copy()
 
-                # Zwiększ numer ruchu
-                self.move_number += 1
 
 
             self.on_game_over(state)

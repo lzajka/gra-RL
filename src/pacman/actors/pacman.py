@@ -10,15 +10,16 @@ class Pacman(Actor):
     Pacman jest aktorem, który porusza się po labiryncie i zbiera punkty.
     """
 
-    def __init__(self, maze : Maze, respawn_interval: int = 0):
-        super().__init__(maze, respawn_interval, "Pacman", (0,0))
+    def __init__(self, state : Maze, respawn_interval: int = 0, name = 'Pacman', spawn=(0,0), **kwargs):
+
+        super().__init__(respawn_interval=respawn_interval, name=name, state=state, spawn=spawn, **kwargs)
         self.prepicked_direction = Direction.RIGHT
         gc = GameCore.get_main_instance()
         self._game_config : GameConfig = gc.get_game_config()
 
     
     def _get_speed_multiplier(self):
-        level = self._game_state.level
+        level = self._state.level
         
         if level == 1:
             if self.is_frightened: return Decimal('0.9')
@@ -32,8 +33,6 @@ class Pacman(Actor):
         else:
             return Decimal('0.9')
 
-    def copy(self):
-        return None
     
     def get_target(self):
         """Zwraca cel, do którego Pacman ma się udać.
@@ -68,7 +67,7 @@ class Pacman(Actor):
     
         self.direction = self.prepicked_direction
         # Sprawdz czy mozna w tym kierunku isc
-        if self.maze.check_wall(self.get_target()):
+        if self._maze.check_wall(self.get_target()):
         # Jeżeli nie można, to nie zmieniaj kierunku
             self.direction = prev_dir
         
@@ -102,8 +101,8 @@ class Pacman(Actor):
     def kill(self):
         """Zabija pacmana wywołując koniec gry.
         """
-        self._game_state.score += self._game_config.DEATH_REWARD
-        self._game_state.is_game_over = True
+        self._state.score += self._game_config.DEATH_REWARD
+        self._state.is_game_over = True
     
         
 

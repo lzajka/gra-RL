@@ -7,9 +7,9 @@ class Pinky(Ghost):
     """Reprezentuje ducha Pinky w grze Pacman.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         kwargs['name'] = 'pinky'
-        super().__init__(*args, **kwargs)      
+        super().__init__(**kwargs)      
 
     def get_chase_position(self) -> Tuple[int, int]:
         """Zwraca pozycję chase dla ducha pinky.
@@ -19,11 +19,11 @@ class Pinky(Ghost):
         :rtype: Tuple[int, int]
         """
         from src.pacman.actors.pacman import Pacman
-        pacman : Pacman = Pacman.get_instance()
+        pacman : Pacman = Pacman.get_instance(self._state)
         current_pos = pacman.get_position()
         future_pos = current_pos
         for i in range(4):
-            future_pos = self.maze.shift_position(future_pos, pacman.direction)
+            future_pos = self._maze.shift_position(future_pos, pacman.direction)
 
         # Pinky jeżeli pacman idzie w górę to celuje w lewo
         if pacman.direction == Direction.UP:
@@ -31,11 +31,6 @@ class Pinky(Ghost):
         
 
         return future_pos
-
-    
-    def copy(self):
-        """Tworzy kopię ducha pinky."""
-        return None
 
     def _get_normal_color(self):
         from src.pacman.game_core import GameCore

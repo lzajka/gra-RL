@@ -4,20 +4,21 @@ from decimal import Decimal
 
 PrecisePosition = Tuple[Decimal, Decimal]
 Position = Tuple[int, int]
-from src.general.utils import TupleOperations as to
+from src.general.utils import TupleOperations as TO
 
 
 class Maze:
     """Klasa przechowująca informacje na temat labiryntu oraz elementów, z których się składa.
     Labirynt to plansza 2D na której
     """
-    def __init__(self):
+    def __init__(self, state):
         """Inicjalizuje labirynt na podstawie pliku.
 
         :param file_path: Ścieżka do pliku z danymi labiryntu.
         :type file_path: str
         """
         self.size = (0, 0)  # Rozmiar labiryntu w postaci krotki (szerokość, wysokość)
+        self.state = state
         
         self.objects_at : Dict[Tuple[int, int], Set] = {}  # Słownik przechowujący obiekty w labiryncie
     
@@ -27,24 +28,21 @@ class Maze:
         new_maze = Maze()
         new_maze.size = self.size
         new_maze.objects_at = dict()
-        #for pos, objects in self.objects_at.items():
-        #    objects2 = set()
-        #    for obj in objects:
-        #        new_obj = obj.copy()
-        #        objects2.add(new_obj)
-        #    new_maze.objects_at[pos] = objects2
-        #return new_maze
+        for pos, objects in self.objects_at.items():
+            for obj in objects:
+                new_obj = obj.copy(new_maze)
+        return new_maze
 
     def handle_outside_positions(self, pos):
         is_int = isinstance(pos[0], int)
-        map_size = to.to_decimal(self.get_size())
-        p = list(to.add_tuples(map_size, pos))
+        map_size = TO.to_decimal(self.get_size())
+        p = list(TO.add_tuples(map_size, pos))
         p[0] %= map_size[0]
         p[1] %= map_size[1]
 
         t = tuple(p)
         if is_int:
-            to.to_int(to.round_tuple(t))
+            TO.to_int(TO.round_tuple(t))
         return t
 
     def shift_position(self, origin : Tuple[Decimal, Decimal], direction : Direction, steps: Decimal = 1) -> Tuple[Decimal, Decimal]:
@@ -88,7 +86,7 @@ class Maze:
                 line = line.strip()
                 pos[0] = 0
                 for char in line:
-                    MazeObject.create_obj_based_on_char(char, tuple(pos), self)
+                    MazeObject.create_obj_based_on_char(char, tuple(pos), self.state)
                     pos[0] += 1
                 pos[1] += 1
 
@@ -220,7 +218,7 @@ class Maze:
             (pos[0], pos[1] + 1)    # Dół
         ]
         
-        return [n for n in neighbors if not self.check_wall(n)]
+        return [ TO.to_int(self.handle_outside_positions(n)) for n in neighbors if not self.check_wall(n)]
     
     def is_intersection(self, pos: Tuple[Decimal, Decimal]) -> bool:
         """Sprawdza, czy dana pozycja jest przecięciem w labiryncie.

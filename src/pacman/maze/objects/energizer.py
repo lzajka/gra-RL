@@ -5,7 +5,7 @@ from src.pacman.game_state import GameState
 
 
 class Energizer(Point):
-    def __init__(self, position: tuple[int, int], parent):
+    def __init__(self, position: tuple[int, int], state : GameState, is_copy = False):
         """Inicjalizuje obiekt na podstawie jego pozycji.
 
         :param position: Pozycja w labiryncie w postaci krotki (x, y).
@@ -14,7 +14,7 @@ class Energizer(Point):
         from src.pacman.game_core import GameCore
         self.gc = GameCore.get_main_instance()
         self.cfg = self.gc.get_game_config()
-        super().__init__(position, parent)
+        super().__init__(position, state, is_copy)
 
     def get_point_type(self):
         return 'energizer'
@@ -31,8 +31,8 @@ class Energizer(Point):
     def _eat_length(self):
         return 3
     
-    def copy(self):
-        return Energizer(self.position, self.maze)
+    def copy(self, state):
+        return Energizer(self.position, state, is_copy=True)
 
     def on_enter(self, obj):
         super().on_enter(obj)
@@ -49,18 +49,18 @@ class Energizer(Point):
     
     def activate(self):
         from src.pacman.timer import start_time_timer
-        pac = Pacman.get_instance()
+        pac = Pacman.get_instance(self._state)
         pac.is_frightened = True
         Ghost.set_state_for_all(is_frightened=True)
-        self.gc._ghost_schedule.is_timer_paused = True
-        lvl = self.gc.get_current_state().level
+        self._state.schedule.is_timer_paused = True
+        lvl = self._state.level
         start_time_timer(self._get_duration(lvl), self.deactivate)
     
     def deactivate(self, GameState : GameState):
-        pac = Pacman.get_instance()
+        pac = Pacman.get_instance(self._state)
         pac.is_frightened = False
         Ghost.set_state_for_all(is_frightened=False)
-        self.gc._ghost_schedule.is_timer_paused = False
+        self._state.schedule.is_timer_paused = False
 
         
         

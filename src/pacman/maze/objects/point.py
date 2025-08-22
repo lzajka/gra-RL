@@ -1,3 +1,4 @@
+from functools import cached_property
 from src.general.maze import MazeObject, Collidable
 from src.pacman.game_config import GameConfig
 
@@ -6,7 +7,7 @@ class Point(MazeObject, Collidable):
     Ściana jest obiektem statycznym, który nie zmienia swojej pozycji ani stanu w trakcie gry.
     """
 
-    def __init__(self, position: tuple[int, int], parent):
+    def __init__(self, position: tuple[int, int], state, is_copy = False):
         """Inicjalizuje obiekt ściany na podstawie jego pozycji.
 
         :param position: Pozycja ściany w labiryncie w postaci krotki (x, y).
@@ -18,10 +19,13 @@ class Point(MazeObject, Collidable):
         game = GameCore.get_main_instance()
         self.cfg = game.get_game_config()
 
-        self._state : GameState = game.get_current_state()
+        self._state : GameState = state
         self._state.max_points += 1
-        super().__init__(position, parent)
- 
+        super().__init__(position, is_copy)
+    
+    @cached_property
+    def _maze(self):
+        return self._state.maze
     
     def _draw(self):
         """Metoda zwracająca reprezentację obiektu w formie graficznej."""
@@ -42,8 +46,8 @@ class Point(MazeObject, Collidable):
     def _get_named_layer(self):
         return 'map'
     
-    def copy(self):
-        s = Point(self.position)
+    def copy(self, state):
+        s = Point(self.position, state, is_copy=True)
         return s
     
     def get_reward(self):
@@ -68,15 +72,14 @@ class Point(MazeObject, Collidable):
     def on_enter(self, obj):
         from src.pacman.actors.pacman import Pacman
         from src.pacman.game_state import GameState
-        gs = GameState.get_main_instance()
 
         if not isinstance(obj, Pacman):
             return
 
         pacman : Pacman = obj
 
-        gs.score += self.get_reward()
-        gs.collected[self.get_point_type()] += 1
+        self._state.score += self.get_reward()
+        self._state.collected[self.get_point_type()] += 1
         self._check_if_all_collected()
         pacman.pause(self._eat_length())
         self.destroy()

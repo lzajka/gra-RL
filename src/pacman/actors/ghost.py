@@ -20,7 +20,7 @@ class Ghost(Actor, Collidable):
     
     
 
-    def __init__(self, parent : Maze, respawn_interval: int = 0, name: str = "Ghost"):
+    def __init__(self, state : GameState , respawn_interval: int = 0, name: str = "Ghost", is_copy = False):
         """Inicjalizuje aktora typu Ghost na podstawie punktu startowego i interwału respawnu.
 
         :param respawn_interval: Czas w sekundach po którym aktor zostanie zrespawnowany.
@@ -35,8 +35,16 @@ class Ghost(Actor, Collidable):
         self._is_dead = False
         self._rng : Random = None
 
-        super().__init__(parent, respawn_interval, name, (1,0)) # Ustawiam tak, aby obiekt później został przeniesiony do odpowiedniego miejsca. Tak, czy tak jest to w ścianie.
-        Ghost.ghosts.append(self)
+        super().__init__(
+            respawn_interval=respawn_interval, 
+            name=name, 
+            spawn=(1,0), # Ustawiam tak, aby obiekt później został przeniesiony do odpowiedniego miejsca. Tak, czy tak jest to w ścianie.
+            base_speed=None,
+            state=state,
+            is_copy=True
+            ) 
+        if not is_copy:
+            Ghost.ghosts.append(self)
         from src.pacman.maze.objects import ScatterTarget
         
 
@@ -82,7 +90,7 @@ class Ghost(Actor, Collidable):
         pass
     
     def _get_speed_multiplier(self):
-        level = self._game_state.level
+        level = self._state.level
         if self.is_dead: return Decimal('5')
 
         if level == 1:
@@ -154,7 +162,7 @@ class Ghost(Actor, Collidable):
 
     def get_frightened_position(self) -> Position:
         pos = self.get_position()
-        next_pos = self.maze.shift_position(pos, self.direction)
+        next_pos = self._maze.shift_position(pos, self.direction)
         
         # sprawdź sąsiadów
         check_positions = [
@@ -173,7 +181,7 @@ class Ghost(Actor, Collidable):
         self._rng.shuffle(check_positions)
 
         for pos in check_positions:
-            if not self.maze.check_wall(pos):
+            if not self._maze.check_wall(pos):
                 return pos
             
         raise RuntimeError("Nie znaleziono dostępnej pozycji dla ducha w trybie FRIGHT. Sprawdź ściany i dostępność sąsiadów.")
@@ -220,7 +228,7 @@ class Ghost(Actor, Collidable):
 
         # Przesuń pozycję ducha o 1 krok
         pos = self.get_position()
-        next_pos = self.maze.shift_position(pos, self.direction)
+        next_pos = self._maze.shift_position(pos, self.direction)
 
         
         # Teraz sprawdź, wszystkie kierunki wokół next_pos
@@ -238,7 +246,7 @@ class Ghost(Actor, Collidable):
 
         # Uniemożliwiaj ściany
         for i in range(len(check_positions)):
-            if self.maze.check_wall(check_positions[i]):
+            if self._maze.check_wall(check_positions[i]):
                 check_positions[i] = (999999999, 999999999)
 
 
@@ -285,7 +293,7 @@ class Ghost(Actor, Collidable):
         from src.pacman.maze.objects import SpawnManager
         f = lambda _ : SpawnManager.spawn(self, False, False)
         reward = self._game_config.GHOST_EAT_REWARD
-        self._game_state.score += reward
+        self._state.score += reward
         self._is_dead = True
         
         #start_time_timer(self._game_config.GHOST_SPAWN_RETURN_T, f, 4)

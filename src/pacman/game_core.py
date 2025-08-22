@@ -57,14 +57,10 @@ class GameCore(AGameCore, UsesMaze):
         :rtype: GameState
         '''
 
-        if self._ghost_schedule is None:
+        pacman : Pacman = Pacman.get_instance(self.game_state)
+        pacman.set_direction(move)
+        if self.game_state.schedule is None:
             raise RuntimeError('Nie ustawiono harmonogramu duchów. Ustaw harmonogram za pomocą metody `set_level` przed wykonaniem ruchu.')
-
-        # Przed
-        self.prev_state = self.game_state.copy()
-        # Po
-        # Przekaż pacmanowi ruch
-        Pacman.get_instance().set_direction(move)
         self._run_hooks()
         GameCore.get_main_instance().show_score()
         self.render()
@@ -72,7 +68,7 @@ class GameCore(AGameCore, UsesMaze):
         time_delta = 1.0/self.game_state.fps
         self.game_state.frame += 1
         self.game_state.time_elapsed += time_delta
-        self._ghost_schedule.add_time(time_delta)
+        self.game_state.schedule.add_time(time_delta)
         #self.game_state.events = pygame.event.get()
 
         return self.game_state
@@ -95,10 +91,6 @@ class GameCore(AGameCore, UsesMaze):
     def get_current_state(self):
         """Zwraca aktualny stan gry."""
         return self.game_state
-    
-    def set_level(self, level, schedule : GhostSchedule):
-        self._ghost_schedule = schedule
-        self.game_state.level = level
     
     def on_restart(self, config):
         '''Metoda restartuję grę. Wykorzystuje podaną konfigurację. Zwraca stan gry
@@ -126,8 +118,8 @@ class GameCore(AGameCore, UsesMaze):
         
         # Inicjalizacja labiryntu
         self.cell_size = None
-        self.maze = Maze()
         self.game_state = GameState()
+        self.game_state.maze = self.maze = Maze(self.game_state)
         self.maze.load_maze(self.config.MAZE_FILE)
         self.game_state.maze = self.maze
         self.game_state.round += 1

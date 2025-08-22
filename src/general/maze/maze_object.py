@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from functools import cached_property
 from typing import List
 
 from . import Maze, PrecisePosition, Position
@@ -14,19 +15,24 @@ class MazeObject(Drawable):
     character_to_class_mapping = {}
 
 
-    def __init__(self, position: tuple[Number, Number], parent : Maze):
+    def __init__(self, position: tuple[Number, Number], is_copy = False):
         """Inicjalizuje obiekt labiryntu na podstawie jego pozycji.
 
         :param position: Pozycja obiektu w labiryncie w postaci krotki (x, y).
         :type position: tuple[Decimal, Decimal]
         """
-        self.maze = parent
         self.position = Decimal(position[0]), Decimal(position[1])
-        self.draw()
-        
-        self.maze._add_object(self)
-        
 
+        if not is_copy: 
+            self.draw()
+
+        self._is_destroyed = False
+        self._maze._add_object(self)
+        
+    @cached_property
+    @abstractmethod
+    def _maze(self) -> Maze:
+        pass
 
     
     def to_csv_line() -> List[str]:
@@ -60,19 +66,20 @@ class MazeObject(Drawable):
         :type position: tuple[Decimal, Decimal]
         """
         # Jeżeli ujemna to przejdź na drugą stronę 
-        position = self.maze.handle_outside_positions(position)
+        position = self._maze.handle_outside_positions(position)
 
 
         self.erase()
-        self.maze._remove_object(self)
+        self._maze._remove_object(self)
         self.position = Decimal(position[0]), Decimal(position[1])
         self.draw()
-        self.maze._add_object(self)
+        self._maze._add_object(self)
 
     def destroy(self):
         """Usuwa obiekt z labiryntu."""
         self.erase()
-        self.maze._remove_object(self)
+        self._maze._remove_object(self)
+        self._is_destroyed = True
 
 
     def _on_update(self):
@@ -91,21 +98,23 @@ class MazeObject(Drawable):
         from src.pacman.game_core import GameCore
         return GameCore.get_main_instance()
     
-    @abstractmethod
-    def copy(self) -> 'MazeObject':
-        """Metoda zwracająca kopię obiektu. Powinna być nadpisana w klasach dziedziczących."""
-        raise NotImplementedError("Metoda copy nie jest zaimplementowana.")
+    def copy(self, state = None) -> 'MazeObject':
+        """Metoda zwracająca kopię obiektu. Domyślnie zakłada, że obiekt nie zmienia stanu, a więc zwraca self. W przypadku w którym obiekt może zmieniać stan konieczne jest odpowiednie nadpisanie tej metody.
+        
+        UWAGA: Ponieważ ta metoda domyślnie zwraca obecną instancję nie wolno wywoływać metod które mogą zmienić stan obiektu takich jak `destroy`, `set_position` itp. W przeciwnym razie może dojść do nieoczekiwanych błędów.
+        """
+        return self
 
     @classmethod
-    def create_obj_based_on_char(cls, char : str, pos : Tuple[int, int], parent : Maze) -> 'MazeObject':
+    def create_obj_based_on_char(cls, char : str, pos : Tuple[int, int], state) -> 'MazeObject':
         """Funkcja zwracająca obiekt labiryntu na podstawie znaku.
 
         :param char: Znak reprezentujący obiekt.
         :type char: str
         :param pos: Pozycja obiektu w labiryncie w postaci krotki (x, y).
         :type pos: tuple[int, int]
-        :param parent: Obiekt labiryntu, do którego należy nowy obiekt.
-        :type parent: Maze
+        :param state: Stan gry
+        :type state: Maze
         :return: Obiekt labiryntu odpowiadający znakowi.
         :rtype: MazeObject
         """
@@ -113,5 +122,7 @@ class MazeObject(Drawable):
         if child is None:
             return None
         
-        return child(pos, parent)
+        return child(pos, state)
         
+    @property
+    def is_destroyed(self): return self._is_destroyed

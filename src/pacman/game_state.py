@@ -7,6 +7,7 @@ from copy import deepcopy
 
 class GameState(AGameState):
     def __init__(self, starting_lives: int = 3):
+        from src.pacman.actors import Blinky, Pinky, Inky, Clyde, Pacman
         """Inicjalizuje stan gry.
 
         :param maze: Labirynt, w którym rozgrywa się gra.
@@ -29,6 +30,12 @@ class GameState(AGameState):
         self.round = 0
         self.frame = 0
         self.time_elapsed = 0.0                     # Czas w sekundach
+        self.a_blinky : Blinky = None
+        self.a_pinky : Pinky = None
+        self.a_inky : Inky = None
+        self.a_clyde : Clyde = None
+        self.a_Pacman : Pacman = None
+        self.schedule = None
     
 
     def to_training_array(self) -> List[float]:
@@ -44,13 +51,13 @@ class GameState(AGameState):
         :return: Kopia stanu gry.
         :rtype: GameState
         """
+        
+        gsc = GameState()
         maze2 = self.maze.copy()
-        gsc = GameState(maze2)
         gsc.remaining_lives = self.remaining_lives
         gsc.is_game_over = self.is_game_over
         gsc.score = self.score
         gsc.collected = self.collected
-        #gsc.remaining_points = self.remaining_points
         gsc.max_points = self.max_points
         gsc.fps = self.fps
         gsc.round = self.round
@@ -58,6 +65,7 @@ class GameState(AGameState):
         gsc.time_elapsed = self.time_elapsed
         gsc.frame = self.frame
         gsc.max_points = self.max_points
+        gsc.schedule = self.schedule
 
     def to_list(self):
         return [
@@ -87,6 +95,10 @@ class GameState(AGameState):
             'collected_points', 
             #'remaining_points'
             ]
+    
+    def set_level(self, level, schedule):
+        self.schedule = schedule
+        self.level = level
 
     
 

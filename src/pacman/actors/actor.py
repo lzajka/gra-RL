@@ -1,3 +1,4 @@
+from functools import cached_property
 from typing import *
 from src.general.maze import MazeObject, Collidable, Maze
 from abc import ABC, abstractmethod
@@ -52,9 +53,11 @@ class Actor(MazeObject):
     
     @classmethod
     def _reload(cls):
-        cls._main_instance = None
+        # To jest wywoływane jedynie w kontekście obecnej instancji, więc tak może zostać
+        state = GameCore.get_main_instance().get_current_state()
+        setattr(state, f'a_{cls.__name__}', None)
 
-    def __init__(self, parent : Maze, respawn_interval: int = 0, name: str = "Actor", spawn: Tuple[int, int] = None, base_speed=None):
+    def __init__(self, respawn_interval: int = 0, name: str = "Actor", spawn: Tuple[int, int] = None, base_speed=None, state : GameState = None, is_copy = False):
         """Inicjalizuje aktora na podstawie punktu startowego i interwału respawnu.
 
         :param Maze maze: Obiekt labiryntu, w którym aktor będzie się poruszał.
@@ -68,7 +71,7 @@ class Actor(MazeObject):
         """
         game : GameCore = GameCore.get_main_instance()
         config = game.get_game_config()
-        if not Actor.registered_collision_hooks:
+        if not Actor.registered_collision_hooks and not is_copy:
             
             game.register_frame_hook(execute_on_collisions, priority_group=4)
             Actor.registered_collision_hooks = True
@@ -86,12 +89,48 @@ class Actor(MazeObject):
         self.prev_block = (Decimal(-1), Decimal(-1))
         self.status_effects = dict()
         self.reverse_direction = False
-        self._game_state : GameState = game.get_current_state()
-        self._level = self._game_state.level
+        self._state = state
+        self._level = state.level
         self._is_tunneling = False
-        self.__class__._main_instance = self 
-        Actor._all_subs.append(self)
-        super().__init__(spawn, parent)
+        setattr(state, f'a_{self.__class__.__name__}', self)
+
+        if not is_copy:
+            Actor._all_subs.append(self)
+
+        super().__init__(spawn)
+
+    @cached_property
+    def _maze(self) -> Maze:
+        return self._state.maze
+
+
+    def copy(self, state = None):
+        """Tworzy kopię aktora. Nie wszystkie elementy są kopiowane - elementy niezmienne, takie jak ściany nie są kopiowane.
+
+        :return: Kopia aktora.
+        :rtype: Actor
+        """
+        if state is None:
+            raise ValueError("Aktor musi być skopiowany do labiryntu.")
+        
+        actor_copy = self.__class__(
+            respawn_interval = self.respawn_interval, 
+            name = self.name, 
+            spawn = self.position,              # spawn jest używany jedynie do przypisania pozycji
+            base_speed = self._base_speed,
+            state = state,
+            is_copy = True
+            )
+        
+        actor_copy.direction = self.direction
+        actor_copy.prev_block = self.prev_block
+        actor_copy._pause = self._pause
+        actor_copy.reverse_direction = self.reverse_direction
+        actor_copy._is_tunneling = self._is_tunneling
+        actor_copy._is_frightened = self._is_frightened
+        actor_copy._level = self._level
+        return actor_copy
+        
 
     @property
     def is_tunneling(self):
@@ -134,13 +173,13 @@ class Actor(MazeObject):
         return self.multiplier * self._base_speed
 
     @classmethod
-    def get_instance(cls) -> 'Actor':
+    def get_instance(cls, state : GameState) -> 'Actor':
         """Zwraca instancję aktora.
 
         :return: Instancja aktora.
         :rtype: Actor
         """
-        return cls._main_instance
+        return getattr(state, f'a_{cls.__name__}')
 
     @abstractmethod
     def get_target() -> Tuple[int, int]:
@@ -233,7 +272,7 @@ class Actor(MazeObject):
 
         # Sprawdź który blok może aktywować
         path_center_block = Actor._get_path_center_block(current_pos, next_pos)
-        if not self.maze.is_intersection(path_center_block): return Decimal(-1)
+        if not self._maze.is_intersection(path_center_block): return Decimal(-1)
 
         # Spr
 
@@ -287,8 +326,8 @@ class Actor(MazeObject):
         if changed_blocks:
             self._handle_reverse_signal()
 
-        future_pos = self.maze.shift_position(precise_position, self.direction, jump)
-        next_block = self.maze.shift_position(position, self.direction)
+        future_pos = self._maze.shift_position(precise_position, self.direction, jump)
+        next_block = self._maze.shift_position(position, self.direction)
 
         if self._pause > 0 and depth == 0:
             self._pause -= 1
@@ -317,7 +356,7 @@ class Actor(MazeObject):
         # Aby to zrobić w ostatniej chwili sprawdzam, czy następna pozycja znajduje się w innym bloku
         future_block = TupleOperations.round_tuple(future_pos)
         is_about_to_change_block = future_block != position
-        if is_about_to_change_block and depth == 0 and self.maze.is_intersection(future_block):
+        if is_about_to_change_block and depth == 0 and self._maze.is_intersection(future_block):
             self.select_future_direction()
 
         # Obsłuż zmiany kierunków
@@ -331,17 +370,26 @@ class Actor(MazeObject):
         if intersection_crossed > 0 and depth == 0:
             return self.get_next_step(intersection_pos, tuple([Decimal(intersection_pos[0]), Decimal(intersection_pos[1])]), intersection_crossed, depth + 1)
         
-        if self.maze.check_wall(next_block) and is_touching:
+        if self._maze.check_wall(next_block) and is_touching:
             future_pos = self.on_hit_wall(precise_position, future_pos, next_block)
 
         # Dodatkowo jeżeli stoi na skrzyżowaniu wykonuj on_intersection
-        if self.maze.is_intersection(position) and depth == 0 and future_pos == position:
+        if self._maze.is_intersection(position) and depth == 0 and future_pos == position:
             self.on_intersection()
 
 
-
-
         return future_pos
+    
+    @property
+    def decision_next_move(self):
+        position = self.get_position()
+        precise_position = self.get_precise_position()
+        future_position = self._maze.shift_position(precise_position, self.direction, self.speed)
+        future_block = TupleOperations.round_tuple(future_position)
+
+        changed_blocks = future_block != position
+        return changed_blocks and self._maze.is_intersection(future_block)
+
     def kill(self):
         """Metoda wywoływana przy śmierci aktora.
         Domyślnie ustawia kierunek na prawo i uruchamia respawn.
@@ -379,7 +427,7 @@ class Actor(MazeObject):
         """
         from src.general.maze import Collidable
         global detected_collisions
-        maze = self.maze
+        maze = self._maze
 
         pos = self.get_position()
         objects = maze.get_objects_at(pos)

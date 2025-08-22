@@ -6,15 +6,16 @@ class Clyde(Ghost):
     """Reprezentuje ducha Clyde w grze Pacman.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         kwargs['name'] = 'clyde'
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
     def get_chase_position(self):
         """Zwraca pozycję chase dla ducha Cylde."""
         from src.pacman.actors import Pacman, Blinky
 
-        pacman : Pacman = Pacman.get_instance()
+        pacman : Pacman = Pacman.get_instance(self._state)
+        blinky : Blinky = Blinky.get_instance(self._state)
 
         # Najpierw policzy dystans Euklidesowy do Pacmana
         pacman_pos = pacman.get_position()
@@ -25,16 +26,12 @@ class Clyde(Ghost):
         future_pos = None
         # Jeśli Pacman jest dalej niż 8 pól, to Clyde idzie do Pacmana, wykorzystam namierzanie blinky'ego
         if distance > 8 ** 2:
-            future_pos = Blinky.get_instance().get_chase_position()
+            future_pos = blinky.get_chase_position()
         # Jeśli Pacman jest bliżej, to Clyde idzie do swojej pozycji scatter
         else:
             future_pos = self.get_scatter_position()
 
         return future_pos
-    
-    def copy(self):
-        """Tworzy kopię ducha Clyde'a."""
-        return None
     
     def _get_normal_color(self):
         from src.pacman.game_core import GameCore

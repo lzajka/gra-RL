@@ -114,11 +114,18 @@ class GhostSchedule():
         """
         from src.pacman.actors import GhostState
         state : GhostState = self._get_state(time)
+
+        is_chasing = None
         if state is None:
             return
+        elif state in (GhostState.CHASE, GhostState.SCATTER):
+            is_chasing = state == GhostState.CHASE
+        else:
+            raise ValueError(f'Niewłaściwy stan harmonogramu: {state}. Oczekiwano stanu CHASE lub SCATTER.')
+
         
         self._logger.info(f'{time:.2f}:Aktualizuję stan duchów na {state}')
         from src.pacman.actors import Ghost
-        Ghost.set_state_for_all(is_chasing=state)
+        Ghost.set_state_for_all(is_chasing=is_chasing)
 
             

@@ -5,7 +5,7 @@ class GameConfig:
     TICKRATE_INITIAL    = 2
     TICKRATE_INCREASE   = 0.2
     TICKRATE_MAX        = 10
-    MAZE_FILE           = "src/pacman/maze/mazes/1.txt"
+    MAZE_FILE           = "src/pacman/maze/mazes/original.txt"
     STARTING_LIVES      = 3
 
     DEATH_REWARD        = -10
