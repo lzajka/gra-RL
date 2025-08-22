@@ -59,7 +59,7 @@ class Player(APlayer):
         :rtype: tuple[Direction, bool]
         """
         state : GameState = _state
-        from src.pacman.agents._base import MazeUtils
+        from src.pacman.maze_utils import MazeUtils
         #self.maze_utils.debug_display()
         # Mimo, że ta funkcja jest po to aby podejmować decyzję, można wsadzić tutaj część logiki gry, która mogłaby być przydatna podczas trenowania modelu
         # Klasy graczy, będą odpowiedzialne, ze inicjalizację aktorów
