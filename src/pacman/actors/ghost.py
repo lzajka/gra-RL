@@ -20,7 +20,7 @@ class Ghost(Actor, Collidable):
     
     
 
-    def __init__(self, state : GameState , respawn_interval: int = 0, name: str = "Ghost", is_copy = False):
+    def __init__(self, state : GameState , respawn_interval: int = 0, name: str = "Ghost", is_copy = False, **kwargs):
         """Inicjalizuje aktora typu Ghost na podstawie punktu startowego i interwału respawnu.
 
         :param respawn_interval: Czas w sekundach po którym aktor zostanie zrespawnowany.

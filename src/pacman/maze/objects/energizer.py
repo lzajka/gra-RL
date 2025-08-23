@@ -54,7 +54,12 @@ class Energizer(Point):
         Ghost.set_state_for_all(is_frightened=True)
         self._state.schedule.is_timer_paused = True
         lvl = self._state.level
-        start_time_timer(self._get_duration(lvl), self.deactivate)
+        duration = self._get_duration(lvl)
+
+        self._state.powerup_activate_start = self._state.time_elapsed
+        self._state.powerup_duration = duration
+        
+        start_time_timer(duration, self.deactivate)
     
     def deactivate(self, GameState : GameState):
         pac = Pacman.get_instance(self._state)

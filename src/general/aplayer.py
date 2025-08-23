@@ -63,44 +63,68 @@ class APlayer(ABC):
     def can_make_a_decision(self, state):
         return True
 
+    def prepare_env(self, state):
+        return state
+
+    def fast_forward(self, state : AGameState) -> AGameState:
+        while not self.can_make_a_decision(state) and not state.is_game_over:
+            state = self.game.make_move(None)
+            self.on_update(state)
+        return state
+    
+    def visit_state(self, state : AGameState):
+        """Metoda wykorzystywana do zebrania informacji o stanie. i-te wywołanie to i-ty stan.
+
+        :param state: _description_
+        :type state: AGameState
+        """
+        pass
+
+    def on_update(self, state : AGameState):
+        pass
 
     def play(self, config = None):
         is_running = True
         config = self.game_config
         while is_running:
+            old_state = None
             # Zresetuj grę i wczytaj stan początkowy
             state = self.game.restart(config)
+            state = self.prepare_env(state)
+            self.on_update(state)
+            state = self.fast_forward(state)
+            self.visit_state(state)
+
             # Zapisz stan do pliku
             self.write_stats(state)
-            old_state = state
-
+            
+            # Jeżeli doszło do końca gry to 
             while not state.is_game_over and is_running:
-                # Sprawdź czy można podjąć decyzję
-                can_decide = self.can_make_a_decision(state)
-                player_move = None
-                if can_decide:
-                    [player_move, is_running] = self.make_decision(state)
-                    # Podejmij decyzję
-                    if not is_running: break
-                    self.on_decision_made(state, player_move)
 
-                    # Sprawdź czy gracz nie podjął decyzji o zakończeniu gry
-                    if not is_running:
-                        break
+                # Zapisz stary stan
+                if self.prev_state_copy: old_state = state.copy()
 
+                # Podejmij decyzję
+                [player_move, is_running] = self.make_decision(state)
+                
+                # Wykonaj działania związane z podjęciem decyzji
+                if not is_running: break
+                self.on_decision_made(state, player_move)
+                
+                # Przejdź do następnego decydującego stanu gry
                 state = self.game.make_move(player_move)
+                self.on_update(state)
+                state = self.fast_forward(state)
+                self.visit_state(state)
 
-                if can_decide:
-                    self.on_move_made(old_state, state, player_move)
-                    # Zapisz stan do pliku
-                    self.write_stats(state)
-                    # Zwiększ numer ruchu
-                    self.move_number += 1
-                    # Skopiuj stary stan
+                # Wykonaj akcje związane z nowym stanem
+                self.on_move_made(old_state, state, player_move)
 
-                    if self.prev_state_copy: old_state = state.copy()
+                # Zapisz info stanu
+                self.write_stats(state)
 
-
+                # Inkrementuj ruch
+                self.move_number += 1
 
             self.on_game_over(state)
             # Zwiększ numer rundy

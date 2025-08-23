@@ -22,15 +22,16 @@ class Maze:
         
         self.objects_at : Dict[Tuple[int, int], Set] = {}  # Słownik przechowujący obiekty w labiryncie
     
-    def copy(self) -> 'Maze':
+    def copy(self, state) -> 'Maze':
         """Tworzy i zwraca kopię labiryntu.
         """
-        new_maze = Maze()
+        new_maze = Maze(state)
         new_maze.size = self.size
         new_maze.objects_at = dict()
         for pos, objects in self.objects_at.items():
             for obj in objects:
-                new_obj = obj.copy(new_maze)
+                new_obj = obj.copy(state)
+                new_maze._add_object(new_obj)
         return new_maze
 
     def handle_outside_positions(self, pos):

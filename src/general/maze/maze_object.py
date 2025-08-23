@@ -25,9 +25,9 @@ class MazeObject(Drawable):
 
         if not is_copy: 
             self.draw()
+            self._maze._add_object(self)
 
         self._is_destroyed = False
-        self._maze._add_object(self)
         
     @cached_property
     @abstractmethod

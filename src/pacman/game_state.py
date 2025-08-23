@@ -30,13 +30,14 @@ class GameState(AGameState):
         self.round = 0
         self.frame = 0
         self.time_elapsed = 0.0                     # Czas w sekundach
-        self.a_blinky : Blinky = None
-        self.a_pinky : Pinky = None
-        self.a_inky : Inky = None
-        self.a_clyde : Clyde = None
+        self.a_Blinky : Blinky = None
+        self.a_Pinky : Pinky = None
+        self.a_Inky : Inky = None
+        self.a_Clyde : Clyde = None
         self.a_Pacman : Pacman = None
-        self.schedule = None
-    
+        self.powerup_activate_start = 0.0
+        self.powerup_duration = 0.0
+        self.schedule = None    
 
     def to_training_array(self) -> List[float]:
         """Zwraca stan gry jako tablicę do treningu.
@@ -53,7 +54,8 @@ class GameState(AGameState):
         """
         
         gsc = GameState()
-        maze2 = self.maze.copy()
+        maze2 = self.maze.copy(gsc)
+        gsc.maze = self.maze
         gsc.remaining_lives = self.remaining_lives
         gsc.is_game_over = self.is_game_over
         gsc.score = self.score
@@ -66,14 +68,17 @@ class GameState(AGameState):
         gsc.frame = self.frame
         gsc.max_points = self.max_points
         gsc.schedule = self.schedule
+        gsc.powerup_activate_start = self.powerup_activate_start
+        gsc.powerup_duration = self.powerup_duration
+        # Aktorów nie kopiujemy. nowe wartości zostaną ustawione podczas wykonywania kopii labiryntu
+
+        return gsc
 
     def to_list(self):
         return [
-            self.remaining_lives,
             self.is_game_over,
             self.score,
-            self.collected,
-            #self.remaining_points
+            self.collected
         ]
     
     @classmethod
@@ -101,7 +106,13 @@ class GameState(AGameState):
         self.level = level
 
     
+    @property
+    def remaining_powerup_time(self):
+        remaining_time = self.powerup_duration + self.time_elapsed - self.powerup_activate_start
+        if self.powerup_duration <= 0 or remaining_time <= 0: return 0
 
+        normalized_time = remaining_time/self.powerup_duration
+        return normalized_time
     
 
         

@@ -10,12 +10,13 @@ class MazeUtils:
     """Klasa dodająca dodatkowe metody związane z analizą labiryntów
     """
     def __init__(self, state):
+        self._state = state
         self._maze = state.maze
         self._pos2edge = dict()
+        self._energizers : List[Energizer] = []
         self._init_graph(self._maze)
         self._detect_energizers(self._maze)
         self._prev_pacman_pos = (-1, -1)
-        self._energizers : List[Energizer] = []
     
     def debug_display(self):
         if self._prev_pacman_pos == (-1, -1):
@@ -111,8 +112,9 @@ class MazeUtils:
 
     def _detect_energizers(self, maze : Maze) -> List[Energizer]:
         objects = maze.get_all_objects()
-        for o in objects:
-            if isinstance(o, Energizer): self._energizers.append(o)
+        for s in objects:
+            for o in s:
+                if isinstance(o, Energizer): self._energizers.append(o)
 
 
     def _assign_edges2positions(self, graph: nx.Graph, maze : Maze, edge):
@@ -164,12 +166,10 @@ class MazeUtils:
         return self._pos2edge[pos]
     
     def get_energizers(self) -> List[Energizer]:
-        arr = []
-        for o in self._energizers:
-            o.copy()
+        return self._energizers
 
     def normalize_position(self, position : Position):
         maze_size = self._maze.get_size()
-        return position[0] / maze_size[0], position[1] / maze_size[1]
+        return float(position[0] / maze_size[0]), float(position[1] / maze_size[1])
     
 

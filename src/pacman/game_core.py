@@ -56,7 +56,6 @@ class GameCore(AGameCore, UsesMaze):
         :return: Stan gry po wykonaniu ruchu.
         :rtype: GameState
         '''
-
         pacman : Pacman = Pacman.get_instance(self.game_state)
         pacman.set_direction(move)
         if self.game_state.schedule is None:
@@ -64,8 +63,9 @@ class GameCore(AGameCore, UsesMaze):
         self._run_hooks()
         GameCore.get_main_instance().show_score()
         self.render()
-        self.fps_controller.tick(self.game_state.fps)
-        time_delta = 1.0/self.game_state.fps
+        
+        self.fps_controller.tick(self.fps)
+        time_delta = 1.0/self.fps
         self.game_state.frame += 1
         self.game_state.time_elapsed += time_delta
         self.game_state.schedule.add_time(time_delta)
@@ -104,6 +104,7 @@ class GameCore(AGameCore, UsesMaze):
         if config is None:
             config = GameConfig()
         self.config = config
+        self.fps = config.FRAME_RATE
         self.next_frame_hooks = []
         self.free_hooks = []
         

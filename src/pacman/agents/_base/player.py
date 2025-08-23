@@ -1,0 +1,272 @@
+#!/usr/bin/env python3
+
+from abc import abstractmethod
+from decimal import Decimal
+from src.pacman.game_core import GameCore
+from src.pacman.game_config import GameConfig
+from . import config_overrides
+from src.general import APlayer, Direction
+from src.general.maze import Maze
+from src.pacman.game_state import GameState
+from .model import Linear_QNet
+from .trainer import QTrainer
+from src.pacman.game_stats_display import GameStatsDisplay
+from src.pacman.actors import Pacman, Blinky, Pinky, Inky, Clyde
+from typing import List, Tuple
+from src.pacman.maze_utils import MazeUtils
+from src.pacman.ghost_schedule import GhostSchedule
+
+import pygame
+import torch
+import random
+import numpy as np
+from collections import deque
+from logging import getLogger
+
+
+
+from argparse import ArgumentParser
+class Player(APlayer):
+
+    cfg = GameConfig()
+
+
+
+    def __init__(self, args : ArgumentParser, config_overrides : dict = {}, MAX_MEMORY = 100_000, BATCH_SIZE = 1000, LR = 0.001):
+        
+        self.MAX_MEMORY = MAX_MEMORY
+        self.BATCH_SIZE = BATCH_SIZE
+        self.LR = LR
+        
+        self.log = getLogger(__name__)
+        self.memory = deque(maxlen=MAX_MEMORY)
+        self.n_games = 0
+        self.epsilon = 0
+        self.gamma = 0.99
+        self.record = 0
+        self.pp_list = []
+        self.stuck_start = float('inf')
+        self._directions = [Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN]
+        self.prev_pos = (Decimal('-1'), Decimal('-1'))
+        self.stat_display = self.get_stat_display()
+
+        # Model + Trainer
+        super().__init__(args, config_overrides)
+        self.model = self.get_model(args)
+        self.trainer = self.get_trainer(args)
+
+    def get_model(self, args):
+        input_size = Player._get_input_layer_size(self.game_config)
+        return Linear_QNet(input_size, 256, 4, load_model_path=args.load_model, save_model_path=args.save_model)
+        
+    def get_trainer(self, args) -> QTrainer:
+        return QTrainer(self.model, lr=self.LR, gamma=self.gamma) 
+
+    def prepare_env(self, state : GameState):
+        from src.pacman.ghost_schedule import GhostSchedule
+        from src.pacman.maze.objects import SpawnManager
+        # Ustaw poziom 1 jako domyślny
+        state.set_level(1, schedule=GhostSchedule(1))
+        SpawnManager.spawn(Pacman(state=state))
+        Blinky(state=state)
+        Pinky(state=state)
+        Inky(state=state)
+        Clyde(state=state)
+        self.maze_utils = MazeUtils(state)
+        self.stat_display.maze_utils = self.maze_utils
+        self.pp_list = []
+        return state
+
+    @staticmethod
+    def _get_input_layer_size(game_config : GameConfig):
+        edge_count = GameConfig.MAP_EDGE_COUNT
+
+        vars = [
+            2,                          # Pozycja pacmana
+            (2 + 2 + 1 + 1)*4,          # Pozycja, Pozycja celu, is_frightened, is_dead dla wszystkich duchów
+            2,                          # Globalny stan duchów: is_chasing, is_scattered
+            1*4,                        # Informacja o zebraniu każdego powerupa
+            1,                          # Ile czasu zostało do zmieniania stanu Scatter <-> Chase
+            1,                          # Ile czasu będzie trwał powerup
+            edge_count                  # Które krawędzie zostały odwiedzone
+        ]
+
+        return sum(vars)
+    
+
+    def _get_ghosts_local_state(self, state : GameState) -> List:
+        from src.pacman.actors import Ghost
+        ghosts : List[Ghost] = [state.a_Blinky , state.a_Pinky, state.a_Inky, state.a_Clyde]
+        arr = []
+        mu = self.maze_utils
+
+        for ghost in ghosts:
+            pos = mu.normalize_position(ghost.get_precise_position())
+            target = mu.normalize_position(ghost.get_target())
+            arr += [
+                *pos,                   # 2
+                *target,                # 2
+                int(ghost.is_frightened),
+                int(ghost.is_dead)
+            ]
+        return arr
+
+    def _get_powerup_states(self, state : GameState, mu : MazeUtils) -> List[int]:
+        energizers = mu.get_energizers()
+        return [int(e.is_destroyed) for e in energizers]
+    
+    @staticmethod
+    def _time_to_state_change(state : GameState):
+        schedule : GhostSchedule = state.schedule
+        sched_timer = schedule._schedule_timer
+        state_info = schedule.get_state_info(sched_timer)
+        duration = state_info.end - state_info.start
+        elapsed = sched_timer - state_info.start
+        if duration <= 0: raise RuntimeError('Nieprawidłowy harmonogram duchów. Czas trwania stanu jest ujemny.')
+        return elapsed/duration
+    
+    @staticmethod
+    def _get_tunnels(mu: MazeUtils):
+        return [
+            int(e['visited']) for e in mu.graph.edges.values()
+        ]
+
+
+    def state_to_arr(self, state : GameState, mu : MazeUtils) -> List:
+        from src.pacman.ghost_schedule import GhostSchedule
+
+        pacman_pos = mu.normalize_position(state.a_Pacman.get_position())
+        return [
+            *pacman_pos,                                    # 2
+            *self._get_ghosts_local_state(state),           # 24 Dane duchów
+            int(state.a_Blinky.is_chasing),                 # 1 Ponieważ to stan globalny to można sprawdzić na jakimkolwiek duchu
+            int(not state.a_Blinky.is_chasing),             # 1
+            *self._get_powerup_states(state, mu),           # 4
+            self._time_to_state_change(state),              # 1
+            state.remaining_powerup_time,                   # 1
+            *self._get_tunnels(mu)
+        ]
+        
+    
+    def can_make_a_decision(self, state : GameState):
+        if self.move_number == 0: return True
+        prev_pos = self.prev_pos
+        new_pos = state.a_Pacman.get_precise_position()
+        self.prev_pos = new_pos
+        
+        is_stuck = prev_pos == new_pos
+
+        if is_stuck:
+            self.stuck_start = min(state.time_elapsed, self.stuck_start)
+            stuck_duration = state.time_elapsed - self.stuck_start
+
+            if stuck_duration >= self.cfg.STUCK_DURATION:
+                self.log.info('Pacman utknął w miejscu - Dodatkowy stan decyzyjny')
+                self.on_stuck(state)
+                self.stuck_start = float('inf')
+                return True
+        elif state.is_game_over:
+            self.log.info('Pacman osiągnął koniec gry - Dodatkowy stan decyzyjny końcowy')
+            self.on_game_over(state)
+            return True
+        elif state.a_Pacman.decision_next_move:
+            self.log.info('Pacman doszedł do skrzyżowania - Stan decyzyjny')
+            return True
+        else:
+            return False
+        
+    def on_stuck(self, state):
+        pass
+    
+    def on_game_over(self, state):
+        pass
+
+    def get_stat_display(self) -> GameStatsDisplay:
+        """Zwraca instancję GameStatsDisplay"""
+        return GameStatsDisplay()
+
+    def getGame(self):
+        return GameCore()
+
+    def remember(self, state, action, reward, next_state, done):
+        self.memory.append((state, action, reward, next_state, done))
+
+    def train_long_memory(self):
+        sample = None
+        if len(self.memory) > self.BATCH_SIZE:
+            sample = random.sample(self.memory, self.BATCH_SIZE)
+        else:
+            sample = self.memory
+
+        states, actions, rewards, next_states, dones = zip(*sample)
+
+        self.trainer.train_step(states, actions, rewards, next_states, dones)
+
+    def train_short_memory(self, state, action, reward, next_state, done):
+        self.trainer.train_step(state, action, reward, next_state, done)
+
+    def visit_state(self, state : GameState):
+        maze : Maze = state.maze
+        self.maze_utils.update(state.a_Pacman.get_position())
+        state_pp = self.state_to_arr(state, self.maze_utils)
+        self.pp_list.append(state_pp)
+
+    @abstractmethod
+    def should_explore(self) -> bool:
+        pass
+
+    def make_decision(self, state : GameState):
+        '''Metoda podejmuje decyzję na podstawie stanu gry.'''
+        
+        state_pp = self.pp_list[-1]
+
+        if self.should_explore():
+            move = random.choice(self._directions)
+        else:
+            state0 = torch.tensor(state_pp, dtype=torch.float)
+            prediction = self.model.forward(state0)
+            move_arr = torch.argmax(prediction).item()
+            move = self._directions[move_arr]
+
+        self.handle_events(state.events)
+        return [move, True]
+
+    
+    def handle_events(self, event):
+        for event in event:
+            if event.type == pygame.QUIT:
+                self.game.quit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.game.quit()
+
+    def on_game_over(self, state):
+        if state.score > self.record:
+            self.record = state.score
+            self.log.info(f'Nowy rekord: {self.record}')
+            self.model.save()
+
+    def action_to_arr(self, action : Direction):
+        arr = [0,0,0,0]
+        index = self._directions.index(action)
+        arr[index] = 1
+        return arr
+
+    def on_move_made(self, old_state, new_state, player_move):
+        # Oblicz nagrodę
+        reward = new_state.score - old_state.score
+        self.log.debug(f'Akcja: {player_move}, nagroda: {reward}')
+
+        state_old_pp = self.pp_list[-2]
+        state_new_pp = self.pp_list[-1]
+        action_pp = self.action_to_arr(player_move)
+
+        # Zapisz do pamięci krótkiej
+        self.train_short_memory(state_old_pp, action_pp, reward, state_new_pp, new_state.is_game_over)
+
+        # Pamiętaj
+        self.remember(state_old_pp, action_pp, reward, state_new_pp, new_state.is_game_over)
+        self.pp_list.pop(0)
+        # Wyświetl wynik
+        self.stat_display.update(new_state)

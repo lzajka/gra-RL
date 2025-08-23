@@ -3,6 +3,8 @@ from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from IPython import display
 from src.pacman.game_state import GameState
+from src.pacman.maze_utils import MazeUtils
+
 
 class GameStatsDisplay(AGameStats.AGameStatsDisplay):
     """
@@ -13,6 +15,7 @@ class GameStatsDisplay(AGameStats.AGameStatsDisplay):
     def __init__(self, fig = Figure(figsize=(15, 10))):
         super().__init__(fig)
         self.prev_score = 0
+        self.maze_utils : MazeUtils = None
 
     def gather_stats(self, state : GameState):
         """Metoda wywoływana przy każdym kroku gry. Wyświetla statystyki gry."""

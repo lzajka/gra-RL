@@ -97,7 +97,7 @@ class Actor(MazeObject):
         if not is_copy:
             Actor._all_subs.append(self)
 
-        super().__init__(spawn)
+        super().__init__(spawn, is_copy)
 
     @cached_property
     def _maze(self) -> Maze:

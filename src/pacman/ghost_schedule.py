@@ -1,8 +1,18 @@
+from dataclasses import dataclass
 from logging import getLogger
+from typing import Dict
+
+@dataclass
+class StateInfo():
+    start: float
+    end: float
+    state: 'GhostState'
+    is_current: bool = False
 
 class GhostSchedule():
     def __init__(self, level):
         from src.pacman.actors import GhostState
+
         self._schedule_timer = 0
         self.is_timer_paused = False
         self._level = level
@@ -65,11 +75,9 @@ class GhostSchedule():
             self._update_ghosts(self._schedule_timer)
 
 
-        
 
-
-    def _get_state(self, time : float):
-        """Zwraca stan obowiązujący w danej chwili. Zwraca None jeżeli stan się nie zmienił.
+    def get_state_info(self, time : float):
+        """Zwraca indeks obowiązującego stanu
 
         :param time: Czas w sekundach
         :type time: float
@@ -84,7 +92,7 @@ class GhostSchedule():
 
         if cache_starttime <= time < cache_stoptime:
             # W tym wypadku nic się nie zmienia
-            return None
+            return StateInfo(cache_starttime, cache_stoptime, self._order[lvl][cache_index][0], True)
         elif cache_stoptime <= time:
             start_index = cache_index + 1
             counter = cache_stoptime
@@ -94,7 +102,6 @@ class GhostSchedule():
         lvl = self._level_index
         schedule = self._order[lvl]
 
-        index = 0
         for i in range(start_index, len(schedule)):
             # Zaczynamy z i które obowiązuje od czasu według counter
             state, duration = schedule[i]
@@ -102,9 +109,11 @@ class GhostSchedule():
             end = counter + duration
             if start <= time < end:
                 self._cache = start, end, i
-                return state
+
+                return StateInfo(start, end, state) 
         else:
             raise RuntimeError(f'Niepoprawny stan harmonogramu. Nie znaleziono stanu dla czasu: {time}. Sprawdź, czy harmonogram jest poprawnie skonfigurowany.')    
+
 
     def _update_ghosts(self, time : float):
         """Aktualizuje stan duchów na podstawie poziomu i czasu.
@@ -113,10 +122,11 @@ class GhostSchedule():
         :type time: float
         """
         from src.pacman.actors import GhostState
-        state : GhostState = self._get_state(time)
+        info  = self.get_state_info(time)
+        state = info.state
 
         is_chasing = None
-        if state is None:
+        if info.is_current:
             return
         elif state in (GhostState.CHASE, GhostState.SCATTER):
             is_chasing = state == GhostState.CHASE
@@ -127,5 +137,3 @@ class GhostSchedule():
         self._logger.info(f'{time:.2f}:Aktualizuję stan duchów na {state}')
         from src.pacman.actors import Ghost
         Ghost.set_state_for_all(is_chasing=is_chasing)
-
-            
