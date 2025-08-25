@@ -18,7 +18,7 @@ class AGameStatsDisplay(ABC):
     Zawiera metody 
     """
 
-    def __init__(self, fig = Figure(figsize=(15, 10)), redraw_interval = 5000):
+    def __init__(self, fig = Figure(figsize=(15, 10)), redraw_interval = 500, window_geometry = '800x600'):
         """Konstruktor klasy AGameStats. Inicjalizuje zmienne do przechowywania wyników gry."""
 
 
@@ -29,7 +29,7 @@ class AGameStatsDisplay(ABC):
         self.figure = fig
         self.redraw_interval = redraw_interval 
         self.last_redraw = 0
-        self.setup_window()
+        self.setup_window(window_geometry=window_geometry)
 
         
         
