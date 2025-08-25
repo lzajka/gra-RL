@@ -52,4 +52,6 @@ class GameConfig:
     WARP_COLOR          = 'lightblue'
     WARP_FILLED_RATIO   = 1
     BASE_SPEED          = Decimal('0.1')
-    FRAME_RATE = 60
+    FRAME_RATE          = 60
+    RELATIVE_DIRECTION  = False
+    TIME_SCALE          = 1

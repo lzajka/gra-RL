@@ -57,6 +57,10 @@ class GameCore(AGameCore, UsesMaze):
         :rtype: GameState
         '''
         pacman : Pacman = Pacman.get_instance(self.game_state)
+
+        # Oblicz kierunek absolutny
+        if move is not None and self.config.RELATIVE_DIRECTION:
+            move = move.add_rotation(pacman.direction)
         pacman.set_direction(move)
         if self.game_state.schedule is None:
             raise RuntimeError('Nie ustawiono harmonogramu duchów. Ustaw harmonogram za pomocą metody `set_level` przed wykonaniem ruchu.')
@@ -64,7 +68,7 @@ class GameCore(AGameCore, UsesMaze):
         GameCore.get_main_instance().show_score()
         self.render()
         
-        self.fps_controller.tick(self.fps)
+        self.fps_controller.tick(self.fps * self.config.TIME_SCALE)
         time_delta = 1.0/self.fps
         self.game_state.frame += 1
         self.game_state.time_elapsed += time_delta
