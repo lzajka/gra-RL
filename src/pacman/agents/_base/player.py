@@ -2,6 +2,7 @@
 
 from abc import abstractmethod
 from decimal import Decimal
+from src.general.maze.maze import Position
 from src.pacman.game_core import GameCore
 from src.pacman.game_config import GameConfig
 from . import config_overrides
@@ -10,11 +11,12 @@ from src.general.maze import Maze
 from src.pacman.game_state import GameState
 from .model import Linear_QNet
 from .trainer import QTrainer
-from src.pacman.game_stats_display import GameStatsDisplay
+from src.pacman.agents._base.stats_display import StatsDisplay
 from src.pacman.actors import Pacman, Blinky, Pinky, Inky, Clyde
 from typing import List, Tuple
 from src.pacman.maze_utils import MazeUtils
 from src.pacman.ghost_schedule import GhostSchedule
+from src.general.direction import Direction
 
 import pygame
 import torch
@@ -32,7 +34,7 @@ class Player(APlayer):
 
 
 
-    def __init__(self, args : ArgumentParser, config_overrides : dict = {}, MAX_MEMORY = 100_000, BATCH_SIZE = 1000, LR = 0.001):
+    def __init__(self, args : ArgumentParser, config_overrides : dict = {}, MAX_MEMORY = 100_000, BATCH_SIZE = 32, LR = 1e-4):
         
         self.MAX_MEMORY = MAX_MEMORY
         self.BATCH_SIZE = BATCH_SIZE
@@ -42,7 +44,7 @@ class Player(APlayer):
         self.memory = deque(maxlen=MAX_MEMORY)
         self.n_games = 0
         self.epsilon = 0
-        self.gamma = 0.99
+        self.gamma = 0.95
         self.record = 0
         self.pp_list = []
         self.stuck_start = float('inf')
@@ -56,7 +58,7 @@ class Player(APlayer):
         self.trainer = self.get_trainer(args)
 
     def get_model(self, args):
-        input_size = Player._get_input_layer_size(self.game_config)
+        input_size = self.__class__._get_input_layer_size(self.game_config)
         return Linear_QNet(input_size, 256, 4, load_model_path=args.load_model, save_model_path=args.save_model)
         
     def get_trainer(self, args) -> QTrainer:
@@ -79,35 +81,71 @@ class Player(APlayer):
 
     @staticmethod
     def _get_input_layer_size(game_config : GameConfig):
-        edge_count = GameConfig.MAP_EDGE_COUNT
 
         vars = [
-            2,                          # Pozycja pacmana
-            (2 + 2 + 1 + 1)*4,          # Pozycja, Pozycja celu, is_frightened, is_dead dla wszystkich duchów
+            (2 + 2 + 1 + 1 + 1 + 4)*4,      # Pozycja relatywna, Pozycja relatywna celu, frightened, is_dead dla wszystkich duchów, dystans, kierunek
             2,                          # Globalny stan duchów: is_chasing, is_scattered
-            1*4,                        # Informacja o zebraniu każdego powerupa
+            (1+2+1)*4,                        # Informacja o zebraniu, pozycji, odległości każdego powerupa
             1,                          # Ile czasu zostało do zmieniania stanu Scatter <-> Chase
             1,                          # Ile czasu będzie trwał powerup
-            edge_count                  # Które krawędzie zostały odwiedzone
+            4                           # Nawigacja do najbliższego punktu
         ]
 
         return sum(vars)
     
+    @staticmethod
+    def _to_relative_pos(origin : Position, origin_direction : Direction, absolute : Position):
+        relative = (0,0)
+        if origin_direction == Direction.UP:
+            relative = [
+                absolute[0] - origin[0],
+                absolute[1] - origin[1]
+
+            ]
+        elif origin_direction == Direction.DOWN:
+            relative = [
+                origin[0] - absolute[0],
+                origin[1] - absolute[1]
+            ]
+        elif origin_direction == Direction.RIGHT:
+            relative = [
+                - origin[1] + absolute[1],
+                - absolute[0] + origin[0]
+            ]
+        elif origin_direction == Direction.LEFT:
+            relative = [
+                origin[1] - absolute[1],
+                absolute[0] - origin[0]
+
+            ]
+        return relative
 
     def _get_ghosts_local_state(self, state : GameState) -> List:
         from src.pacman.actors import Ghost
         ghosts : List[Ghost] = [state.a_Blinky , state.a_Pinky, state.a_Inky, state.a_Clyde]
         arr = []
         mu = self.maze_utils
+        pacman_pos = state.a_Pacman.get_position()
+        pacman_dir = state.a_Pacman.direction
 
         for ghost in ghosts:
-            pos = mu.normalize_position(ghost.get_precise_position())
-            target = mu.normalize_position(ghost.get_target())
+            pos = ghost.get_position()
+            target = ghost.get_target()
+
+            pos = self.__class__._to_relative_pos(pacman_pos, pacman_dir, pos)
+            target = self.__class__._to_relative_pos(pacman_pos, pacman_dir, target)
+
+            pos = mu.normalize_position(pos)
+            target = mu.normalize_position(target)
+            dist = (abs(pos[0]) + abs(pos[1]))/128
+
             arr += [
                 *pos,                   # 2
                 *target,                # 2
                 int(ghost.is_frightened),
-                int(ghost.is_dead)
+                int(ghost.is_dead),
+                dist,
+                *ghost.direction.remove_rotation(pacman_dir).get_dummies()
             ]
         return arr
 
@@ -125,31 +163,31 @@ class Player(APlayer):
         if duration <= 0: raise RuntimeError('Nieprawidłowy harmonogram duchów. Czas trwania stanu jest ujemny.')
         return elapsed/duration
     
-    @staticmethod
-    def _get_tunnels(mu: MazeUtils):
-        return [
-            int(e['visited']) for e in mu.graph.edges.values()
-        ]
-
+    def _get_powerpellet_info(self, state, mu : MazeUtils, intersection : Position) -> List:
+        energizers = mu.get_energizers()
+        
+        return [0]*16
 
     def state_to_arr(self, state : GameState, mu : MazeUtils) -> List:
         from src.pacman.ghost_schedule import GhostSchedule
+        maze : Maze = state.maze 
+        intersection = state.a_Pacman.get_position()
+
+        while not maze.is_intersection(intersection):
+            intersection = maze.shift_position(intersection, state.a_Pacman.direction)
 
         pacman_pos = mu.normalize_position(state.a_Pacman.get_position())
         return [
-            *pacman_pos,                                    # 2
             *self._get_ghosts_local_state(state),           # 24 Dane duchów
             int(state.a_Blinky.is_chasing),                 # 1 Ponieważ to stan globalny to można sprawdzić na jakimkolwiek duchu
             int(not state.a_Blinky.is_chasing),             # 1
-            *self._get_powerup_states(state, mu),           # 4
+            *self._get_powerpellet_info(state, mu),         # 16
             self._time_to_state_change(state),              # 1
             state.remaining_powerup_time,                   # 1
-            *self._get_tunnels(mu)
-        ]
-        
+            *self.maze_utils.get_shortest_distances_from_intersection(state, intersection)
+        ]        
     
     def can_make_a_decision(self, state : GameState):
-        if self.move_number == 0: return True
         prev_pos = self.prev_pos
         new_pos = state.a_Pacman.get_precise_position()
         self.prev_pos = new_pos
@@ -167,12 +205,15 @@ class Player(APlayer):
                 return True
         elif state.is_game_over:
             self.log.info('Pacman osiągnął koniec gry - Dodatkowy stan decyzyjny końcowy')
+            self.stuck_start = float('inf')
             self.on_game_over(state)
             return True
         elif state.a_Pacman.decision_next_move:
             self.log.info('Pacman doszedł do skrzyżowania - Stan decyzyjny')
+            self.stuck_start = float('inf')
             return True
         else:
+            self.stuck_start = float('inf')
             return False
         
     def on_stuck(self, state):
@@ -181,9 +222,9 @@ class Player(APlayer):
     def on_game_over(self, state):
         pass
 
-    def get_stat_display(self) -> GameStatsDisplay:
+    def get_stat_display(self) -> StatsDisplay:
         """Zwraca instancję GameStatsDisplay"""
-        return GameStatsDisplay()
+        return StatsDisplay()
 
     def getGame(self):
         return GameCore()
@@ -207,7 +248,6 @@ class Player(APlayer):
 
     def visit_state(self, state : GameState):
         maze : Maze = state.maze
-        self.maze_utils.update(state.a_Pacman.get_position())
         state_pp = self.state_to_arr(state, self.maze_utils)
         self.pp_list.append(state_pp)
 
@@ -226,20 +266,21 @@ class Player(APlayer):
             state0 = torch.tensor(state_pp, dtype=torch.float)
             prediction = self.model.forward(state0)
             move_arr = torch.argmax(prediction).item()
-            move = self._directions[move_arr]
+            move : Direction = self._directions[move_arr]
 
-        self.handle_events(state.events)
+        self.handle_events()
         return [move, True]
 
     
-    def handle_events(self, event):
-        for event in event:
+    def handle_events(self):
+        events = pygame.event.get()
+        for event in events:
             if event.type == pygame.QUIT:
-                self.game.quit()
+                pygame.quit()
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    self.game.quit()
+                    pygame.quit()
 
     def on_game_over(self, state):
         if state.score > self.record:
@@ -253,7 +294,7 @@ class Player(APlayer):
         arr[index] = 1
         return arr
 
-    def on_move_made(self, old_state, new_state, player_move):
+    def on_move_made(self, old_state, new_state, player_move : Direction):
         # Oblicz nagrodę
         reward = new_state.score - old_state.score
         self.log.debug(f'Akcja: {player_move}, nagroda: {reward}')
@@ -270,3 +311,7 @@ class Player(APlayer):
         self.pp_list.pop(0)
         # Wyświetl wynik
         self.stat_display.update(new_state)
+
+    def on_update(self, state):
+        self.maze_utils.update(state.a_Pacman.get_position())
+        return super().on_update(state)
