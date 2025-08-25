@@ -41,7 +41,7 @@ class Ghost(Actor, Collidable):
             spawn=(1,0), # Ustawiam tak, aby obiekt później został przeniesiony do odpowiedniego miejsca. Tak, czy tak jest to w ścianie.
             base_speed=None,
             state=state,
-            is_copy=True
+            is_copy=is_copy
             ) 
         if not is_copy:
             Ghost.ghosts.append(self)
