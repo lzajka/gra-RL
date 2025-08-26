@@ -66,7 +66,9 @@ class GameCore(AGameCore, UsesMaze):
             raise RuntimeError('Nie ustawiono harmonogramu duchów. Ustaw harmonogram za pomocą metody `set_level` przed wykonaniem ruchu.')
         self._run_hooks()
         GameCore.get_main_instance().show_score()
-        self.render()
+
+        if self.game_state.frame % (self.config.SKIPPED_FRAMES + 1) == 0:
+            self.render()
         
         self.fps_controller.tick(self.fps * self.config.TIME_SCALE)
         time_delta = 1.0/self.fps

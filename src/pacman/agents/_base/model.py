@@ -28,8 +28,7 @@ class Linear_QNet(nn.Module):
     def __load(self, file_name):
         if os.path.exists(file_name):
             self.load_state_dict(torch.load(file_name))
-            self.eval()
-            self.training_enabled = False
+            #self.eval()
             self.log.info(f"Model {file_name} załadowany pomyślnie.")
         else:
             raise FileNotFoundError(f"Model {file_name} nie znaleziony.")

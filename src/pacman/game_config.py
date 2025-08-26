@@ -55,3 +55,4 @@ class GameConfig:
     FRAME_RATE          = 60
     RELATIVE_DIRECTION  = False
     TIME_SCALE          = 1
+    SKIPPED_FRAMES      = 0

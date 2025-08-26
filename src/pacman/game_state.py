@@ -37,7 +37,8 @@ class GameState(AGameState):
         self.a_Pacman : Pacman = None
         self.powerup_activate_start = 0.0
         self.powerup_duration = 0.0
-        self.schedule = None    
+        self.schedule = None
+        self.ai_bonus = 0
 
     def to_training_array(self) -> List[float]:
         """Zwraca stan gry jako tablicę do treningu.
@@ -70,6 +71,7 @@ class GameState(AGameState):
         gsc.schedule = self.schedule
         gsc.powerup_activate_start = self.powerup_activate_start
         gsc.powerup_duration = self.powerup_duration
+        gsc.ai_bonus = self.ai_bonus
         # Aktorów nie kopiujemy. nowe wartości zostaną ustawione podczas wykonywania kopii labiryntu
 
         return gsc

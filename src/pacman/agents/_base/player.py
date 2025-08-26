@@ -163,9 +163,7 @@ class Player(APlayer):
         if duration <= 0: raise RuntimeError('Nieprawidłowy harmonogram duchów. Czas trwania stanu jest ujemny.')
         return elapsed/duration
     
-    def _get_powerpellet_info(self, state, mu : MazeUtils, intersection : Position) -> List:
-        energizers = mu.get_energizers()
-        
+    def _get_powerpellet_info(self, state : GameState, mu : MazeUtils, intersection : Position) -> List:        
         return [0]*16
 
     def state_to_arr(self, state : GameState, mu : MazeUtils) -> List:
@@ -178,13 +176,13 @@ class Player(APlayer):
 
         pacman_pos = mu.normalize_position(state.a_Pacman.get_position())
         return [
-            *self._get_ghosts_local_state(state),           # 24 Dane duchów
-            int(state.a_Blinky.is_chasing),                 # 1 Ponieważ to stan globalny to można sprawdzić na jakimkolwiek duchu
-            int(not state.a_Blinky.is_chasing),             # 1
-            *self._get_powerpellet_info(state, mu),         # 16
-            self._time_to_state_change(state),              # 1
-            state.remaining_powerup_time,                   # 1
-            *self.maze_utils.get_shortest_distances_from_intersection(state, intersection)
+            *self._get_ghosts_local_state(state),                                           # 24 Dane duchów
+            int(state.a_Blinky.is_chasing),                                                 # 1 Ponieważ to stan globalny to można sprawdzić na jakimkolwiek duchu
+            int(not state.a_Blinky.is_chasing),                                             # 1
+            *self._get_powerpellet_info(state, mu, intersection),                           # 16
+            self._time_to_state_change(state),                                              # 1
+            state.remaining_powerup_time,                                                   # 1
+            *self.maze_utils.get_shortest_distances_from_intersection(state, intersection)  # 4
         ]        
     
     def can_make_a_decision(self, state : GameState):
@@ -294,9 +292,9 @@ class Player(APlayer):
         arr[index] = 1
         return arr
 
-    def on_move_made(self, old_state, new_state, player_move : Direction):
+    def on_move_made(self, old_state : GameState, new_state : GameState, player_move : Direction):
         # Oblicz nagrodę
-        reward = new_state.score - old_state.score
+        reward = new_state.score - old_state.score + new_state.ai_bonus - old_state.ai_bonus
         self.log.debug(f'Akcja: {player_move}, nagroda: {reward}')
 
         state_old_pp = self.pp_list[-2]

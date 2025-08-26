@@ -26,7 +26,7 @@ agent_mode_group.add_argument('-a', '--agent', type=str,
                        help='Nazwa agenta do uruchomienia. Jeżeli argumentu nie podano, gra zostanie uruchomiona w trybie dla człowieka. Jeżeli argument podano bez wartości, zostanie uruchomiony domyślny agent "default".', 
                        nargs='?', const='default', default=None)
 
-model_group = agent_mode_group.add_mutually_exclusive_group(required=False)
+model_group = agent_mode_group.add_argument_group('IO')
 
 model_group.add_argument('-l', '--load-model', type=str, dest='load_model', 
                               help='Ścieżka do pliku z modelem agenta, którego chcemy wczytać.', default=None)

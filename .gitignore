@@ -6,3 +6,4 @@ docs/_venv
 .vscode/*
 **/*.code-workspace
 docs/autoapi
+uml
