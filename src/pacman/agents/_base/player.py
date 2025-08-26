@@ -182,7 +182,7 @@ class Player(APlayer):
             *self._get_powerpellet_info(state, mu, intersection),                           # 16
             self._time_to_state_change(state),                                              # 1
             state.remaining_powerup_time,                                                   # 1
-            *self.maze_utils.get_shortest_distances_from_intersection(state, intersection)  # 4
+            *self.maze_utils.get_closest_not_collected(state, intersection)  # 4
         ]        
     
     def can_make_a_decision(self, state : GameState):
@@ -206,7 +206,7 @@ class Player(APlayer):
             self.stuck_start = float('inf')
             self.on_game_over(state)
             return True
-        elif state.a_Pacman.decision_next_move:
+        elif prev_pos != new_pos:
             self.log.info('Pacman doszedł do skrzyżowania - Stan decyzyjny')
             self.stuck_start = float('inf')
             return True

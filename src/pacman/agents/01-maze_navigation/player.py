@@ -28,7 +28,7 @@ class Player(P):
 
         collected = sum(state.collected.values())
 
-        dist = self.maze_utils.get_shortest_distances_from_intersection(state, intersection)
+        dist = self.maze_utils.get_closest_not_collected(state, intersection)
 
         m = max(dist)
 

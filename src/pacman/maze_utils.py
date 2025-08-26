@@ -16,6 +16,7 @@ class MazeUtils:
         self._maze : Maze = state.maze
         self._pos2edge = dict()
         self._energizers : List[Energizer] = []
+        self.real_nodes : List[Position]= []
         self._init_graph(self._maze)
         self._detect_energizers(self._maze)
         self._prev_pacman_pos = None
@@ -43,40 +44,20 @@ class MazeUtils:
         graph = self.graph
         
         pos = {}
-        m = max([n[1] for n in graph.nodes]) + 1
+        
+        m = max([n[1] for n in self.real_nodes]) + 1
 
-        for n in graph.nodes:
+        for n in self.real_nodes:
             pos[n] = (n[0], m - n[1])
 
-        e_cleared = [e for e in graph.edges if graph.edges[e].get('cleared')]
-        e_not_cleared = [e for e in graph.edges if not graph.edges[e].get('cleared')]
-        n_cleared = [n for n in graph.nodes if graph.nodes[n].get('cleared')]
-        n_not_cleared = [n for n in graph.nodes if not graph.nodes[n].get('cleared')]
+
+        n_not_cleared = [n for n in graph.neighbors('nc')]
+        n_cleared = [n for n in self.real_nodes if n not in n_not_cleared]
         
-        interesting_nodes = self.__class__._find_interesting_nodes(graph)
+        nx.draw_networkx_nodes(graph, pos, nodelist=n_not_cleared, node_color='r', ax=ax)
+        nx.draw_networkx_nodes(graph, pos, nodelist=n_cleared, node_color='g', ax=ax)
+        nx.draw_networkx_edges(graph, pos, edgelist=self.real_edges, ax=ax)
 
-        nx.draw_networkx_nodes(graph, pos, nodelist=interesting_nodes, node_color='black', node_size=400, ax=ax)
-        nx.draw_networkx(graph, pos, with_labels=True, nodelist=n_not_cleared, edgelist=e_not_cleared, edge_color='r', node_color='r', width=3, ax=ax)
-        nx.draw_networkx(graph, pos, with_labels=True, nodelist=n_cleared, edgelist=e_cleared, edge_color='g', node_color='g', width=2, ax=ax)
-    
-    @staticmethod
-    def _find_interesting_nodes(graph):
-        edges = list(graph.edges)
-        nodes = list(graph.nodes)
-
-        ret = set()
-
-        for e in edges:
-            if not graph.edges[e]['cleared']:
-                ret.add(e[0])
-                ret.add(e[1])
-        
-        for n in nodes:
-            if not graph.nodes[n]['cleared']:
-                ret.add(n)
-
-        return list(ret)
-        
 
     def _init_graph(self, maze : Maze) -> nx.Graph:
         """Metoda tworzy graf przedstawiający jakie skrzyżowania są ze sobą połączone.
@@ -86,13 +67,14 @@ class MazeUtils:
         :return: Powstały graf
         :rtype: Graph
         """
+        from src.pacman.maze.objects import Point
         # Przyszykuj zmienne
         maze_size = maze
         self.graph = nx.Graph()
-        stack : Deque[Tuple[Position, Position]] = deque()     # Dequeue używana jako stos
+        stack : Deque[Position] = deque()     # Dequeue używana jako stos
         visited : set = set()       # visited
         # Znajdź pierwsze lepsze skrzyżowanie
-        initial_node = self._find_initial_intersection(maze)
+        initial_node = self._find_initial_node(maze)
         # Dodaj skrzyżowanie
         self.graph.add_node(initial_node)
         visited.add(initial_node)        
@@ -100,59 +82,48 @@ class MazeUtils:
         neighbors = maze.get_neighbors(initial_node)
         # Dodaj ich na stos      
         for n in neighbors:
-            stack.append((
-                initial_node,       # Początek
-                n,                  # następny wierzchołek wierzchołek
-                set([initial_node]),# Zawarte wierzchołki oprócz następnego
-
-            ))
-
+            stack.append(n)
 
         while len(stack) > 0:
-            origin : Position
-            position : Position
-            nodes : Set
-            origin, position, nodes = stack.pop()
-
-
-            was_visited = position in visited
-            is_intersection = maze.is_intersection(position)
-
-
-            if is_intersection:
-                nodes.remove(origin)
-                self.graph.add_nodes_from([origin, position], cleared=True)
-                self.graph.add_edge(origin, position, contains=nodes, cleared=True, length=len(nodes))
-                self._assign_edges2positions(self.graph, maze, (origin, position))
-
-                nodes = set()
-                origin = position
-
-            if was_visited:
-                continue
+            position: Position = stack.pop()
             
-            nodes.add(position)
+            # Sprawdź czy pusty
+            cleared = True
+            objects = self._maze.get_objects_at(position)
+            for object in objects:
+                if isinstance(object, Point): cleared = False
+            
+            self._mark_cleared(position, cleared)
+
+            # Skanuj sąsiadów
             neighbors = maze.get_neighbors(position)
             visited.add(position)
-            for i in neighbors:
-                if origin != i: stack.append((origin, i, nodes.copy()))
 
-        self._detect_cleared()
+            for n in neighbors:
+                if n not in visited:
+                    stack.append(n)
+                    self.graph.add_edge(position, n)
 
-    def _detect_cleared(self):
-        from src.pacman.maze.objects import Point
-        objects = self._maze.get_all_objects()
-        for s in objects:
-            for o in s:
-                if isinstance(o, Point): 
-                    pos = o.get_position()
-                    is_intersection = self._maze.is_intersection(pos)
+        self.real_nodes = [n for n in self.graph.nodes if isinstance(n, Tuple)]
 
-                    if is_intersection:
-                        self.graph.nodes[pos]['cleared'] = False
-                    else:
-                        e = self._pos2edge[pos]
-                        self.graph.edges[e]['cleared'] = False
+    def _mark_cleared(self, position : Position, is_cleared : bool):
+        self.graph.add_edge(position, 'nc')
+        
+        if is_cleared:
+            self.graph.remove_edge(position, 'nc')
+            
+    @property
+    def real_edges(self):
+        real_nodes = set(self.real_nodes)
+        graph = self.graph
+
+        edges = []
+        for (u, v) in self.graph.edges:
+            if u in real_nodes and v in real_nodes:
+                edges.append((u, v))
+        
+        return edges
+
 
     def _detect_energizers(self, maze : Maze) -> List[Energizer]:
         objects = maze.get_all_objects()
@@ -160,13 +131,8 @@ class MazeUtils:
             for o in s:
                 if isinstance(o, Energizer): self._energizers.append(o)
 
-
-    def _assign_edges2positions(self, graph: nx.Graph, maze : Maze, edge):
-        positions = graph.edges[*edge].get('contains')
-        for pos in positions:
-            self._pos2edge[pos] = edge
     
-    def _find_initial_intersection(self, maze : Maze) -> Position:
+    def _find_initial_node(self, maze : Maze) -> Position:
         """Znajduje początkowe skrzyżowanie w labiryncie.
 
         :param maze: Labirynt do przeszukania
@@ -178,7 +144,7 @@ class MazeUtils:
         for x in range(maze_size[0]):
             for y in range(maze_size[1]):
                 pos = (x,y)
-                if maze.is_intersection(pos):
+                if not maze.check_wall(pos):
                     return pos
 
     def update(self, pacman_pos : Position):
@@ -187,25 +153,8 @@ class MazeUtils:
         pacman_pos = self._maze.handle_outside_positions(pacman_pos)
         if self._prev_pacman_pos == pacman_pos:
             return
-        edge = None
-        pacman_on_intersection = self._maze.is_intersection(pacman_pos)
 
-        if pacman_on_intersection:
-            self.graph.nodes[pacman_pos]['cleared'] = True
-        else:
-            edge = self._pos2edge[pacman_pos]
-            self.graph.edges[edge]['cleared'] = True
-
-    def get_associated_edges(self, pos : Position) -> Tuple[Position, Position]:
-        """Metoda zwraca krawędź na której dany punkt jest zawarty. 
-        Jeżeli punkt jest skrzyżowaniem zwracane są wszystkie krawędzie w których on się znajduje.
-
-        :param pos: Pozycja
-        :type pos: Position
-        :return: Lista krawędzi
-        :rtype: List[Tuple[Position, Position]]
-        """
-        return self._pos2edge[pos]
+        self._mark_cleared(pacman_pos, True)
     
     def get_energizers(self) -> List[Energizer]:
         return self._energizers
@@ -215,52 +164,14 @@ class MazeUtils:
         return float(position[0] / maze_size[0]), float(position[1] / maze_size[1])
     
 
-    def get_distance_to_closest_not_cleared(self, origin : Position, neighbor : Position):
+    def _distance_to_closest_point(self, origin : Position, neighbor : Position):
         
-        if neighbor not in self.graph.nodes:
-            raise ValueError("Punkt startowy nie jest węzłem grafu (Podaj skrzyżowanie).")
-        
-        # 1. Sprawdź czy krawędź między origin i position jest oczyszczona
-        if not self.graph.edges[origin, neighbor]['cleared']:
-            # Jeżeli nie wystarczy zmiana kierunku
-            return 0
-
-
-        # Nie interesuje mnie to, czy na wierzchołku startowym znajduje się punkt, ponieważ jest to skrzyżowanie, które tak, czy tak aktywuje
-        dist_1 = self.graph.edges[origin, neighbor]['length']
-
+        self.graph.remove_edge(origin, neighbor)
 
         
-        graph = self.graph.copy()
-
-        # Zapobiegnij powracaniu
-        graph.remove_edge(origin, neighbor)
-
-        # Szukam najkrótszej możliwej ścieżki do najbliższego punktu który ma nieodwiedzoną ścieżkę.
-        # Aby to zrobić utworzę wirtualny punkt do którego wszystkie te wierzchołki będą połączone krawędzią o długości 0
-
-        # Oznaczam wszystkie interesujące mnie wierzchołki
-        interesting_nodes = self.__class__._find_interesting_nodes(graph)
-        for n in interesting_nodes:
-            graph.add_edge(n, 'v', length=0)
-        
-        @staticmethod
-        def distance_calc(start, end, attributes : Dict):
-            ret = 0
-            # Jeżeli punktu nie ma w wierzchołku
-            if graph.nodes[start]['cleared']: ret += 1
-
-            ret += attributes['length']
-
-            return ret
-        dist_2 = 99999
-        try:
-            dist_2 = nx.shortest_path_length(graph, neighbor, 'v', distance_calc)
-        except:
-            pass
-        
-        ret = dist_1 + dist_2
-        return ret
+        shortest = nx.shortest_path_length(self.graph, neighbor, 'nc')
+        self.graph.add_edge(origin, neighbor)
+        return shortest
 
     def from_which_direction(self, other : Position, me : Position) -> Direction:
         """Metoda zwraca kierunek z którego nadeszła pacman w danym skrzyżowaniu."""
@@ -276,9 +187,9 @@ class MazeUtils:
         elif y < 0:
             return Direction.DOWN
 
-    def get_shortest_distances_from_intersection(self, state : GameState, origin : Position):
+    def get_closest_not_collected(self, state : GameState, origin : Position):
         """Metoda zwraca odległość od najbliższej nie odwiedzonej krawędzi w zależności od wyboru kierunku na skrzyżowaniu"""
-        neighbours = self.graph.neighbors(origin)
+        neighbors = list(self.graph.neighbors(origin))
 
         order = [
             Direction.LEFT,
@@ -292,10 +203,9 @@ class MazeUtils:
 
         ret = [1024] * 4
 
-        for neighbour in neighbours:
-            dir = self.from_which_direction(neighbour, origin)
-            e=neighbour, origin
-            ret[order.index(dir)] = self.get_distance_to_closest_not_cleared(origin, neighbour)
+        for neighbor in neighbors:
+            dir = self.from_which_direction(neighbor, origin)
+            ret[order.index(dir)] = self._distance_to_closest_point(origin, neighbor)
         # Znormalizuj (Podzielenie przez 1024 może być i tak dłuższej ścieżki nie będzie oraz float dobrze dzieli przez potęgi 2)
         
         for i in range(len(ret)):
