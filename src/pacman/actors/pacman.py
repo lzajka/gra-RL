@@ -60,7 +60,13 @@ class Pacman(Actor):
         :type direction: Direction
         """
         if direction is not None:
+            # Jeżeli to odwrotny kierunek
+            if direction == self.direction.add_rotation(Direction.DOWN) and not self._maze.is_intersection(self.get_position()):
+                self.reverse_direction = True
+            else:
+                self.reverse_direction = False
             self.prepicked_direction = direction
+
     
     def on_intersection(self):
         prev_dir = self.direction

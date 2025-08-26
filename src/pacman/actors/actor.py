@@ -381,7 +381,7 @@ class Actor(MazeObject):
         return future_pos
     
     @property
-    def decision_next_move(self):
+    def intersection_next_move(self):
         position = self.get_position()
         precise_position = self.get_precise_position()
         future_position = self._maze.shift_position(precise_position, self.direction, self.speed)
