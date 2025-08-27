@@ -6,7 +6,7 @@ from matplotlib.pyplot import plot
 class StatsDisplay(AGameStatsDisplay):
     
     def __init__(self, fig = Figure(figsize=(20, 10), dpi=70)):
-        super().__init__(fig, window_geometry='1400x600')
+        super().__init__(fig, window_geometry='1400x600', redraw_interval=2000)
         self.prev_score = 0
         self.maze_utils : MazeUtils = None
         self.ai_bonuses = []

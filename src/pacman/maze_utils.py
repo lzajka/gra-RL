@@ -19,7 +19,7 @@ class MazeUtils:
         self.real_nodes : List[Position]= []
         self._init_graph(self._maze)
         self._detect_energizers(self._maze)
-        self._prev_pacman_pos = None
+        self._prev_pacman_pos = (-1, -1)
     
     def debug_display(self):
         import tkinter as tk
@@ -54,8 +54,8 @@ class MazeUtils:
         n_not_cleared = [n for n in graph.neighbors('nc')]
         n_cleared = [n for n in self.real_nodes if n not in n_not_cleared]
         
-        nx.draw_networkx_nodes(graph, pos, nodelist=n_not_cleared, node_color='r', ax=ax)
-        nx.draw_networkx_nodes(graph, pos, nodelist=n_cleared, node_color='g', ax=ax)
+        nx.draw_networkx_nodes(graph, pos, nodelist=n_not_cleared, node_color='r', ax=ax, node_size=100)
+        nx.draw_networkx_nodes(graph, pos, nodelist=n_cleared, node_color='g', ax=ax, node_size=100)
         nx.draw_networkx_edges(graph, pos, edgelist=self.real_edges, ax=ax)
 
 
@@ -100,9 +100,9 @@ class MazeUtils:
             visited.add(position)
 
             for n in neighbors:
+                self.graph.add_edge(position, n)
                 if n not in visited:
                     stack.append(n)
-                    self.graph.add_edge(position, n)
 
         self.real_nodes = [n for n in self.graph.nodes if isinstance(n, Tuple)]
 
@@ -153,7 +153,7 @@ class MazeUtils:
         pacman_pos = self._maze.handle_outside_positions(pacman_pos)
         if self._prev_pacman_pos == pacman_pos:
             return
-
+        self._prev_pacman_pos = pacman_pos
         self._mark_cleared(pacman_pos, True)
     
     def get_energizers(self) -> List[Energizer]:
@@ -166,11 +166,14 @@ class MazeUtils:
 
     def _distance_to_closest_point(self, origin : Position, neighbor : Position):
         
-        self.graph.remove_edge(origin, neighbor)
+        graph = self.graph.copy()
+        graph.remove_edge(origin, neighbor)
 
-        
-        shortest = nx.shortest_path_length(self.graph, neighbor, 'nc')
-        self.graph.add_edge(origin, neighbor)
+        try:
+            shortest = nx.shortest_path_length(graph, neighbor, 'nc')
+        except:
+            return 1024
+        #self.graph.add_edge(origin, neighbor)
         return shortest
 
     def from_which_direction(self, other : Position, me : Position) -> Direction:
@@ -204,11 +207,12 @@ class MazeUtils:
         ret = [1024] * 4
 
         for neighbor in neighbors:
+            if not isinstance(neighbor, tuple): continue
             dir = self.from_which_direction(neighbor, origin)
             ret[order.index(dir)] = self._distance_to_closest_point(origin, neighbor)
         # Znormalizuj (Podzielenie przez 1024 może być i tak dłuższej ścieżki nie będzie oraz float dobrze dzieli przez potęgi 2)
         
         for i in range(len(ret)):
-            ret[i] = 1/(ret[i]+1)
+            ret[i] = 1/(ret[i])
 
         return ret

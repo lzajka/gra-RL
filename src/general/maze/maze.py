@@ -21,17 +21,19 @@ class Maze:
         self.state = state
         
         self.objects_at : Dict[Tuple[int, int], Set] = {}  # Słownik przechowujący obiekty w labiryncie
+        self.copy_set = set()
+        self.all_objects = set()
     
     def copy(self, state) -> 'Maze':
         """Tworzy i zwraca kopię labiryntu.
         """
         new_maze = Maze(state)
+        state.maze = new_maze
         new_maze.size = self.size
         new_maze.objects_at = dict()
-        for pos, objects in self.objects_at.items():
-            for obj in objects:
-                new_obj = obj.copy(state)
-                new_maze._add_object(new_obj)
+        for obj in self.copy_set:
+            new_obj = obj.copy(state)
+            new_maze._add_object(new_obj)
         return new_maze
 
     def handle_outside_positions(self, pos):
@@ -182,7 +184,7 @@ class Maze:
         for obj in self.objects_at.values():
             ret += obj.get_csv_header()
 
-    def _add_object(self, obj):
+    def _add_object(self, obj, is_static = True):
         """Funkcja służąca do aktualizacji stanu labiryntu po dodaniu nowego obiektu, bądź po zmianie pozycji istniejącego obiektu.
         Dodaje przypisanie obiektu do odpowiedniego pola.
 
@@ -193,7 +195,13 @@ class Maze:
             self.objects_at[obj.get_position()] = set()
         self.objects_at[obj.get_position()].add(obj)
 
-    def _remove_object(self, obj):
+        if not is_static:
+            self.copy_set.add(obj)
+
+        self.all_objects.add(obj)
+        
+
+    def _remove_object(self, obj, is_static = True):
         """
         Funkcja służąca do aktualizacji stanu labiryntu po usunięciu obiektu, bądź po zmianie pozycji istniejącego obiektu.
         Usuwa przypisanie obiektu z odpowiedniego pola.
@@ -202,6 +210,12 @@ class Maze:
         :type obj: MazeObject
         """
         self.objects_at[obj.get_position()].remove(obj)
+
+        if not is_static:
+            self.copy_set.remove(obj)
+
+        self.all_objects.remove(obj)
+
     
     def get_neighbors(self, pos: Tuple[int, int]) -> List[Tuple[int, int]]:
         """Zwraca listę sąsiadujących pozycji w labiryncie.

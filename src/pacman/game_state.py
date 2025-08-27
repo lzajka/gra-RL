@@ -55,7 +55,7 @@ class GameState(AGameState):
         """
         
         gsc = GameState()
-        maze2 = self.maze.copy(gsc)
+        #maze2 = self.maze.copy(gsc)
         gsc.maze = self.maze
         gsc.remaining_lives = self.remaining_lives
         gsc.is_game_over = self.is_game_over

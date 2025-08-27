@@ -97,7 +97,7 @@ class Actor(MazeObject):
         if not is_copy:
             Actor._all_subs.append(self)
 
-        super().__init__(spawn, is_copy)
+        super().__init__(spawn, is_copy, is_static=False)
 
     @cached_property
     def _maze(self) -> Maze:
@@ -388,7 +388,17 @@ class Actor(MazeObject):
         future_block = TupleOperations.round_tuple(future_position)
 
         changed_blocks = future_block != position
-        return changed_blocks and self._maze.is_intersection(future_block)
+        return self.changed_blocks and self._maze.is_intersection(future_block)
+    
+    @property
+    def about_to_change_blocks(self):
+        position = self.get_position()
+        precise_position = self.get_precise_position()
+        future_position = self._maze.shift_position(precise_position, self.direction, self.speed)
+        future_block = TupleOperations.round_tuple(future_position)
+
+        changed_blocks = future_block != position
+        return changed_blocks
 
     def kill(self):
         """Metoda wywoływana przy śmierci aktora.

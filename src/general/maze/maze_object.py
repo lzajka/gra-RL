@@ -15,7 +15,7 @@ class MazeObject(Drawable):
     character_to_class_mapping = {}
 
 
-    def __init__(self, position: tuple[Number, Number], is_copy = False):
+    def __init__(self, position: tuple[Number, Number], is_copy = False, is_static = True):
         """Inicjalizuje obiekt labiryntu na podstawie jego pozycji.
 
         :param position: Pozycja obiektu w labiryncie w postaci krotki (x, y).
@@ -25,8 +25,7 @@ class MazeObject(Drawable):
 
         if not is_copy: 
             self.draw()
-            self._maze._add_object(self)
-
+            self._maze._add_object(self, is_static)
         self._is_destroyed = False
         
     @cached_property
@@ -47,7 +46,7 @@ class MazeObject(Drawable):
         :return: Pozycja obiektu w postaci krotki (x, y).
         :rtype: tuple[Decimal, Decimal]
         """
-        return self.position
+        return self._maze.handle_outside_positions(self.position)
     
     def get_position(self) -> tuple[int, int]:
         """Zwraca pozycję obiektu w labiryncie. Pozycja ta jest używana przez logikę aktorów (aktor jest albo przypisany do pola, albo nie)
@@ -55,8 +54,8 @@ class MazeObject(Drawable):
         :return: Pozycja obiektu w postaci krotki (x, y).
         :rtype: tuple[int, int]
         """
-        return (self.position[0].to_integral_value(ROUND_HALF_UP), 
-                self.position[1].to_integral_value(ROUND_HALF_UP))
+        return self._maze.handle_outside_positions((self.position[0].to_integral_value(ROUND_HALF_UP), 
+                self.position[1].to_integral_value(ROUND_HALF_UP)))
     
 
     def set_position(self, position: tuple[Decimal, Decimal]):

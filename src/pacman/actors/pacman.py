@@ -76,6 +76,9 @@ class Pacman(Actor):
         if self._maze.check_wall(self.get_target()):
         # Jeżeli nie można, to nie zmieniaj kierunku
             self.direction = prev_dir
+
+    def _handle_reverse_signal(self):
+        return super()._handle_reverse_signal()
         
     def get_csv_header(self):
         return ['PacmanPosX', 'PacmanPosY', 'PacmanDirection']

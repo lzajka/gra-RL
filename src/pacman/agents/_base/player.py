@@ -34,7 +34,7 @@ class Player(APlayer):
 
 
 
-    def __init__(self, args : ArgumentParser, config_overrides : dict = {}, MAX_MEMORY = 100_000, BATCH_SIZE = 32, LR = 1e-4):
+    def __init__(self, args : ArgumentParser, config_overrides : dict = {}, MAX_MEMORY = 100_000, BATCH_SIZE = 32, LR = 1e-4, seed=10):
         
         self.MAX_MEMORY = MAX_MEMORY
         self.BATCH_SIZE = BATCH_SIZE
@@ -50,7 +50,9 @@ class Player(APlayer):
         self.stuck_start = float('inf')
         self._directions = [Direction.LEFT, Direction.RIGHT, Direction.UP, Direction.DOWN]
         self.prev_pos = (Decimal('-1'), Decimal('-1'))
+        self.prev_pos_int = (-1, -1)
         self.stat_display = self.get_stat_display()
+        self._random = random.Random(seed)
 
         # Model + Trainer
         super().__init__(args, config_overrides)
@@ -169,44 +171,44 @@ class Player(APlayer):
     def state_to_arr(self, state : GameState, mu : MazeUtils) -> List:
         from src.pacman.ghost_schedule import GhostSchedule
         maze : Maze = state.maze 
-        intersection = state.a_Pacman.get_position()
-
-        while not maze.is_intersection(intersection):
-            intersection = maze.shift_position(intersection, state.a_Pacman.direction)
-
-        pacman_pos = mu.normalize_position(state.a_Pacman.get_position())
+        position = state.a_Pacman.get_position()
+            
         return [
             *self._get_ghosts_local_state(state),                                           # 24 Dane duchów
             int(state.a_Blinky.is_chasing),                                                 # 1 Ponieważ to stan globalny to można sprawdzić na jakimkolwiek duchu
             int(not state.a_Blinky.is_chasing),                                             # 1
-            *self._get_powerpellet_info(state, mu, intersection),                           # 16
+            *self._get_powerpellet_info(state, mu, position),                               # 16
             self._time_to_state_change(state),                                              # 1
             state.remaining_powerup_time,                                                   # 1
-            *self.maze_utils.get_closest_not_collected(state, intersection)  # 4
+            *self.maze_utils.get_closest_not_collected(state, position)                     # 4
         ]        
     
     def can_make_a_decision(self, state : GameState):
         prev_pos = self.prev_pos
+
         new_pos = state.a_Pacman.get_precise_position()
+        new_pos_int = state.a_Pacman.get_position()
         self.prev_pos = new_pos
+        prev_pos_int = self.prev_pos_int
+        self.prev_pos_int = new_pos_int
         
         is_stuck = prev_pos == new_pos
 
         if is_stuck:
             self.stuck_start = min(state.time_elapsed, self.stuck_start)
             stuck_duration = state.time_elapsed - self.stuck_start
-
             if stuck_duration >= self.cfg.STUCK_DURATION:
                 self.log.info('Pacman utknął w miejscu - Dodatkowy stan decyzyjny')
                 self.on_stuck(state)
                 self.stuck_start = float('inf')
                 return True
+            else: return False
         elif state.is_game_over:
             self.log.info('Pacman osiągnął koniec gry - Dodatkowy stan decyzyjny końcowy')
             self.stuck_start = float('inf')
             self.on_game_over(state)
             return True
-        elif prev_pos != new_pos:
+        elif prev_pos_int != new_pos_int:
             self.log.info('Pacman doszedł do skrzyżowania - Stan decyzyjny')
             self.stuck_start = float('inf')
             return True
@@ -233,7 +235,7 @@ class Player(APlayer):
     def train_long_memory(self):
         sample = None
         if len(self.memory) > self.BATCH_SIZE:
-            sample = random.sample(self.memory, self.BATCH_SIZE)
+            sample = self._random.sample(self.memory, self.BATCH_SIZE)
         else:
             sample = self.memory
 
@@ -259,7 +261,7 @@ class Player(APlayer):
         state_pp = self.pp_list[-1]
 
         if self.should_explore():
-            move = random.choice(self._directions)
+            move = self._random.choice(self._directions)
         else:
             state0 = torch.tensor(state_pp, dtype=torch.float)
             prediction = self.model.forward(state0)

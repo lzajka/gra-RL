@@ -3,45 +3,59 @@ from src.pacman.game_state import GameState
 from src.pacman.agents._base import Player as P
 from src.pacman.maze_utils import MazeUtils
 class Player(P):
-    def __init__(self, args, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=32, LR=5e-4):
+    def __init__(self, args, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=128, LR=1e-4):
         super().__init__(args, config_overrides, MAX_MEMORY, BATCH_SIZE, LR)
         self.random = Random(10)
-        self.last_visit = 0
-        self.prev_collected = 0
         self.hunger = 0
-        self.prev_distance = -1
+        self.prev_distance = None
 
     def should_explore(self):
-        epsilon = min(0.1, 1 - self.round_number/64)
+        # Najpierw daj mu wyjść wykonać kilka pierwszych ruchów
+        epsilon = min(0.01, 0.4 - self.round_number/512)
         return self.random.random() <= epsilon
     
     def prepare_env(self, state):
         self.hunger = 0
-        self.prev_distance = -1
+        self.prev_distance = None
+        self.prev_collected = 0
+        self.state_num = 0
         return super().prepare_env(state)
+    
+    def can_make_a_decision(self, state):
+        # Wykonaj kilka ruchów automatycznie, aby był dalej od środka
+        return super().can_make_a_decision(state)
 
     def visit_state(self, state : GameState):
         if state.is_game_over: return super().visit_state(state)
 
-        intersection = state.maze.shift_position(state.a_Pacman.get_position(), state.a_Pacman.direction)
-        if state.maze.check_wall(intersection): intersection = state.a_Pacman.get_position()
+        pacman_pos = state.a_Pacman.get_position()
 
         collected = sum(state.collected.values())
 
-        dist = self.maze_utils.get_closest_not_collected(state, intersection)
+        dist = self.maze_utils.get_closest_not_collected(state, pacman_pos)
 
         m = max(dist)
 
-        # Tym mniejsze tym gorsze, dlatego chcemy ciągle to zwiększać
+        hunger_mercy = False
+
+        if self.prev_distance is None:
+            self.prev_distance = m
+            hunger_mercy = True
+
         gotten_closer = m > self.prev_distance
 
-        if self.prev_collected == collected and not gotten_closer:
+        # Dodatkowo kara czasowa
+
+
+        # Tym mniejsze tym gorsze, dlatego chcemy ciągle to zwiększać        
+        if self.prev_collected == collected and not gotten_closer and not hunger_mercy:
             self.hunger += 1
-            state.ai_bonus -= 10
         elif self.prev_collected < collected:
             self.hunger = 0
 
-        if self.hunger > 3:
+        state.ai_bonus += (m - self.prev_distance)
+
+        if self.hunger > 30:
             state.a_Pacman.kill()
         # Ponieważ wynik się zmniejszy zaaktualizuj prev_score
         self.prev_collected = collected

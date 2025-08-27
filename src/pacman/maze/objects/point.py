@@ -21,7 +21,7 @@ class Point(MazeObject, Collidable):
 
         self._state : GameState = state
         self._state.max_points += 1
-        super().__init__(position, is_copy)
+        super().__init__(position, is_copy, is_static=False)
     
     @cached_property
     def _maze(self):
