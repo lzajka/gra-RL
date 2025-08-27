@@ -1,3 +1,5 @@
+from collections import deque
+from src.general.utils.tuple_operations import TupleOperations as TO
 from .actor import Actor
 from .ghost_state import GhostState
 from abc import ABC, abstractmethod
@@ -32,8 +34,11 @@ class Ghost(Actor, Collidable):
         self._gc = GameCore.get_main_instance()
         self._game_config : GameConfig = self._gc.get_game_config()
         self._is_chasing = False
-        self._is_dead = False
+        self._is_dead = True
         self._rng : Random = None
+        self.history = deque(maxlen=5)
+        self.history.append((-1, -1))
+        self.history.append((-1, -1))
 
         super().__init__(
             respawn_interval=respawn_interval, 
@@ -267,12 +272,30 @@ class Ghost(Actor, Collidable):
 
         self.future_direction = winner[0]
 
+    def commit_changes(self, current_state):
+        ret = super().commit_changes(current_state)
+
+        # Dodajemy, jeżeli nie jest martwy
+
+        if not self.is_dead: self._add_to_history()
+
+    def _add_to_history(self):
+        pos = TO.to_int(self.get_position())
+        prev_pos = self.history[-1]
+
+        if pos != prev_pos:
+            self.history.append(pos)
+
     def on_spawn(self):
         super().on_spawn()
         self.is_chasing = False
 
         # Zrób tak aby duch decydował na pozycji spawnowej
         self.direction = Direction.LEFT
+
+        self.history.clear()
+        self.history.append((-1, -1))
+        self.history.append((-1, -1))
         # Duch zazwyczaj idzie w lewo
 
         #spawn_pos = self.get_position()
@@ -285,7 +308,12 @@ class Ghost(Actor, Collidable):
         #self.set_position(spawn_pos)
     
     def on_leave_ghost_pen(self):
+        self._is_dead = False
         self.direction = Direction.LEFT
+        self.history.clear()
+        self.history.append((-1, -1))
+        spawn_pos = TO.to_int(self.get_position())
+        self.history.append(spawn_pos)
 
     def kill(self):
         """Zabija ducha. Po zabiciu duch wraca na spawn.

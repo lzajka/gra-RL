@@ -14,7 +14,7 @@ class Player(BPlayer):
         self.random = Random(10)
 
     def should_explore(self):
-        epsilon = min(0.1, 0.7 - self.round_number/1024)
+        epsilon = min(0.1, 0.7 - self.round_number/256)
         return self.random.random() <= epsilon
     
     def prepare_env(self, state):
@@ -53,20 +53,20 @@ class Player(BPlayer):
     def visit_state(self, state):
         from src.pacman.actors import Ghost
         ghosts : List[Ghost] = [state.a_Blinky , state.a_Pinky, state.a_Inky, state.a_Clyde]
-        pacman_pos = state.a_Pacman.get_position()
-
+        pacman_pos = TO.to_int(state.a_Pacman.get_position())
+        pacman_dir = state.a_Pacman.direction
+        mu = self.maze_utils
         distances = []
 
         for ghost in ghosts:
-            pos = ghost.get_position()
+            ghost_pos = TO.to_int(ghost.get_position())
+            how_close = min(mu.navigate_to_position(pacman_pos, ghost_pos, pacman_dir, normalize=False))
 
-            dist = abs(pacman_pos[0] - pos[0]) + abs(pacman_pos[1] - pos[1])
+            distances.append(how_close)
 
-            distances.append(dist)
 
         # Oblicz karę
         for distance in distances:
-            if distance < 15:
-                state.ai_bonus -= 50/(distance/5+1)
-
+            if distance < 7:
+                state.ai_bonus -= 8/(distance + 1)
         return super().visit_state(state)

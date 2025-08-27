@@ -86,7 +86,7 @@ class Actor(MazeObject):
         self.direction = Direction.RIGHT
         self._base_speed = base_speed
         self._pause = 0
-        self.prev_block = (Decimal(-1), Decimal(-1))
+        self._prev_block = (Decimal(-1), Decimal(-1))       
         self.status_effects = dict()
         self.reverse_direction = False
         self._state = state
@@ -123,12 +123,13 @@ class Actor(MazeObject):
             )
         
         actor_copy.direction = self.direction
-        actor_copy.prev_block = self.prev_block
+        actor_copy._prev_block = self._prev_block
         actor_copy._pause = self._pause
         actor_copy.reverse_direction = self.reverse_direction
         actor_copy._is_tunneling = self._is_tunneling
         actor_copy._is_frightened = self._is_frightened
         actor_copy._level = self._level
+        actor_copy.history = self.history
         return actor_copy
         
 
@@ -318,7 +319,7 @@ class Actor(MazeObject):
             precise_position = self.get_precise_position()
         if jump is None:
             jump = self.speed
-        changed_blocks = self.prev_block != position
+        changed_blocks = self._prev_block != position
 
         if jump >= 1: 
             raise ValueError("Długość skoku musi być mniejsza niż 1. Obecna długość skoku: {}".format(jump))
@@ -349,7 +350,7 @@ class Actor(MazeObject):
         # Zaktualizuj poprzedni blok
 
         if changed_blocks:
-            self.prev_block = self.get_position()
+            self._prev_block = self.get_position()
 
 
         # Ponieważ duch musi myśleć o 1 krok do przodu, to jeżeli następnym krokiem będzie skrzyżowanie, to wybieramy kierunek.

@@ -17,6 +17,7 @@ from typing import List, Tuple
 from src.pacman.maze_utils import MazeUtils
 from src.pacman.ghost_schedule import GhostSchedule
 from src.general.direction import Direction
+from src.general.utils import TupleOperations as TO
 
 import pygame
 import torch
@@ -127,26 +128,30 @@ class Player(APlayer):
         ghosts : List[Ghost] = [state.a_Blinky , state.a_Pinky, state.a_Inky, state.a_Clyde]
         arr = []
         mu = self.maze_utils
-        pacman_pos = state.a_Pacman.get_position()
+        pacman_pos = TO.to_int(state.a_Pacman.get_position())
         pacman_dir = state.a_Pacman.direction
 
         for ghost in ghosts:
-            pos = ghost.get_position()
-            target = ghost.get_target()
+            pos = TO.to_int(ghost.get_position())
+
+            # Duch normalnie nie może zawracać
+            nav_a = [0] * 4
+            prev_block = ghost.history[-2]
+            if prev_block != (-1, -1):
+                mu.graph.remove_edge(prev_block, pos)
+                nav_a = mu.navigate_to_position(pacman_pos, pos, pacman_dir)
+                mu.graph.add_edge(prev_block, pos)
 
             pos = self.__class__._to_relative_pos(pacman_pos, pacman_dir, pos)
-            target = self.__class__._to_relative_pos(pacman_pos, pacman_dir, target)
-
             pos = mu.normalize_position(pos)
-            target = mu.normalize_position(target)
-            dist = (abs(pos[0]) + abs(pos[1]))/128
+            #target = mu.normalize_position(target)
+            dist = (1 - (abs(pos[0]) + abs(pos[1])))/2
 
             arr += [
-                *pos,                   # 2
-                *target,                # 2
+                *nav_a,
                 int(ghost.is_frightened),
                 int(ghost.is_dead),
-                dist,
+                0,
                 *ghost.direction.remove_rotation(pacman_dir).get_dummies()
             ]
         return arr

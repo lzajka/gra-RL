@@ -1,5 +1,6 @@
+from enum import Enum
 from src.general import Direction
-from src.general.maze import Maze, Position
+from src.general.maze import Maze, Position, PrecisePosition
 import networkx as nx
 from copy import copy
 from collections import deque, namedtuple
@@ -7,6 +8,11 @@ from typing import Deque, Dict, Tuple, List, Set
 from src.pacman.maze.objects import Energizer
 from src.general.utils import TupleOperations as TO
 from src.pacman.game_state import GameState
+from logging import getLogger
+
+class NodeTypes(Enum):
+    REGULAR         = 'regular'
+    VNOT_COLLECTED   = 'not_collected'
 
 class MazeUtils:
     """Klasa dodająca dodatkowe metody związane z analizą labiryntów
@@ -20,6 +26,7 @@ class MazeUtils:
         self._init_graph(self._maze)
         self._detect_energizers(self._maze)
         self._prev_pacman_pos = (-1, -1)
+        self._logger = getLogger(__name__)
     
     def debug_display(self):
         import tkinter as tk
@@ -73,10 +80,12 @@ class MazeUtils:
         self.graph = nx.Graph()
         stack : Deque[Position] = deque()     # Dequeue używana jako stos
         visited : set = set()       # visited
-        # Znajdź pierwsze lepsze skrzyżowanie
+        # Znajdź pierwszy lepszy wierzchołek
         initial_node = self._find_initial_node(maze)
-        # Dodaj skrzyżowanie
-        self.graph.add_node(initial_node)
+        # Dodaj pierwszy wierzchołek
+        self.graph.add_node(initial_node, node_type=NodeTypes.REGULAR)
+        # Dodaj wirtualny wierzchołek
+        self.graph.add_node('nc', node_type=NodeTypes.VNOT_COLLECTED)
         visited.add(initial_node)        
         # Znajdź sąsiadów
         neighbors = maze.get_neighbors(initial_node)
@@ -100,6 +109,7 @@ class MazeUtils:
             visited.add(position)
 
             for n in neighbors:
+                self.graph.add_node(n, node_type=NodeTypes.REGULAR)
                 self.graph.add_edge(position, n)
                 if n not in visited:
                     stack.append(n)
@@ -214,5 +224,78 @@ class MazeUtils:
         
         for i in range(len(ret)):
             ret[i] = 1/(ret[i])
+
+        return ret
+    
+    def weight_select_nodes(self, ignored : Set[NodeTypes]):
+        """zwraca funkcję pozwalającą na ignorowanie odpowiednich wierzchołków podczas szukania najkrótszej ścieżki.  
+
+        :param ignored: Ignorowane wierzchołki.
+        :type ignored: Set[NodeTypes]
+        """
+
+        def weight(a,b,_):
+            g = self.graph
+
+            t1 : NodeTypes = g.nodes[a]['node_type']
+            t2 : NodeTypes = g.nodes[b]['node_type']
+
+            if t1 in ignored or t2 in ignored:
+                return 1024
+            else:
+                return 1
+
+        return weight
+
+
+            
+    
+    def navigate_to_position(self, origin : Position, target : Position, origin_dir = Direction.UP, closer0 = True, normalize = True) -> List[float]:
+        """Pozwala na nawigację do danej pozycji. Zwraca podobną wartość, co get_closest_not_collected
+
+        :param origin: Start
+        :type origin: Position
+        :param target: Cel
+        :type target: Position
+        :param origin_dir: Kierunek w którym zwrócona lista ma być uporządkowana
+        :type origin_dir: Direction, opcjonalny
+        :param closer0: Czy bliższy cel ma mieć wartość bliższą zeru.
+        :type closer0: bool, opcjonalny
+        :return: Lista złożona z 4 floatów. Tym większa wartość tym dany obiekt bliżej
+        :rtype: List[float]
+        """
+        order = [
+            Direction.LEFT,
+            Direction.RIGHT,
+            Direction.UP,
+            Direction.DOWN
+        ]
+
+        for i in range(len(order)):
+            order[i] = order[i].add_rotation(origin_dir)
+
+        
+        ret = [1024] * 4
+
+        neighbors = list(self.graph.neighbors(origin))
+        for neighbor in neighbors:
+            if not isinstance(neighbor, tuple): continue
+            dir = self.from_which_direction(neighbor, origin)
+
+            i = order.index(dir)
+            weight_f = self.weight_select_nodes(set([NodeTypes.VNOT_COLLECTED]))
+            self.graph.remove_edge(origin, neighbor)
+            try:
+                ret[i] = nx.shortest_path_length(self.graph, neighbor, target, weight=weight_f) + 1
+            except:
+                self._logger.info(f'Brak ścieżki z {origin} do {target} przez {neighbor}')
+            self.graph.add_edge(origin, neighbor)
+
+        if normalize:
+            for i in range(len(ret)):
+                ret[i] = 1/(ret[i])
+
+            if not closer0:
+                for i in range(len(ret)): ret[i] = 1 - ret[i]
 
         return ret
