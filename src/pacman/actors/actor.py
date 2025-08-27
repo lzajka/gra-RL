@@ -221,17 +221,17 @@ class Actor(MazeObject):
         :param wall_hit: Pozycja ściany, w którą aktor uderzył.
         :type wall_hit: Position
         """
-        from decimal import ROUND_DOWN
+        from decimal import ROUND_HALF_UP
         cnext_pos = Maze.to_center_pos(next_pos)
         cwall = Maze.to_center_pos(wall_hit)
 
         is_colliding = [(cn - cw).copy_abs() < 1 for (cn, cw) in zip(cnext_pos, cwall)]
         was_changed = [a != b for (a, b) in zip(current_pos, next_pos)]
 
-        ret = [None, None]
+        ret : List[Decimal, Decimal] = [None, None]
         for i in range(2):
             if is_colliding[i] and was_changed[i]:
-                ret[i] = cnext_pos[i].to_integral_value(ROUND_DOWN)
+                ret[i] = current_pos[i].to_integral(ROUND_HALF_UP)
             else:
                 ret[i] = next_pos[i]
             
