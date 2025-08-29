@@ -32,7 +32,7 @@ class Player(P):
 
         collected = sum(state.collected.values())
 
-        dist = self.maze_utils.get_closest_not_collected(state, pacman_pos)
+        dist = self.maze_utils.get_closest_dist_for_dirs(state, pacman_pos, normalize = False)
 
         m = max(dist)
 

@@ -173,18 +173,41 @@ class MazeUtils:
         maze_size = self._maze.get_size()
         return float(position[0] / maze_size[0]), float(position[1] / maze_size[1])
     
+    def distance_to(self, position : Position, target):
+        graph = self.graph
 
-    def _distance_to_closest_point(self, origin : Position, neighbor : Position):
+        def w(start, end, _):
+            # Można dać praktycznie nieskończony koszt jeżeli wracamy z wierzchołka wirtualnego
+            stype : NodeTypes = graph.nodes[start]['node_type']
+            etype : NodeTypes = graph.nodes[start]['node_type']
+            if stype == etype:
+                raise ValueError('Nie można iść z wirtualnego do wirtualnego')
+            elif stype == NodeTypes.VIRTUAL:
+                return 1024
+            elif etype == NodeTypes.VIRTUAL:
+                return 0
+            else:
+                return 1
         
-        graph = self.graph.copy()
+        shortest = 1024
+        try:
+            shortest = nx.shortest_path_length(graph, position, target, w)
+        except:
+            pass
+
+        return min(shortest, 1024)
+
+    def _distance_to_closest_by_neighbor(self, origin : Position, neighbor : Position, master):
+        
+        graph = self.graph
         graph.remove_edge(origin, neighbor)
 
-        try:
-            shortest = nx.shortest_path_length(graph, neighbor, 'nc')
-        except:
-            return 1024
-        #self.graph.add_edge(origin, neighbor)
-        return shortest
+
+        shortest = self.distance_to(neighbor, master) + 1
+
+
+        self.graph.add_edge(origin, neighbor)
+        return min(shortest, 1024)
 
     def from_which_direction(self, other : Position, me : Position) -> Direction:
         """Metoda zwraca kierunek z którego nadeszła pacman w danym skrzyżowaniu."""
@@ -200,7 +223,7 @@ class MazeUtils:
         elif y < 0:
             return Direction.DOWN
 
-    def get_closest_not_collected(self, state : GameState, origin : Position):
+    def get_closest_dist_for_dirs(self, state : GameState, origin : Position, master = 'nc', normalize = True):
         """Metoda zwraca odległość od najbliższej nie odwiedzonej krawędzi w zależności od wyboru kierunku na skrzyżowaniu"""
         neighbors = list(self.graph.neighbors(origin))
 
@@ -219,11 +242,13 @@ class MazeUtils:
         for neighbor in neighbors:
             if not isinstance(neighbor, tuple): continue
             dir = self.from_which_direction(neighbor, origin)
-            ret[order.index(dir)] = self._distance_to_closest_point(origin, neighbor)
+            # Koszt dojścia do wirtualnego wierzchołka zastępuje nam koszt zaoszczędzony przez ucięcie krawędzi origin-neighbor
+            ret[order.index(dir)] = self._distance_to_closest_by_neighbor(origin, neighbor, master)
         # Znormalizuj (Podzielenie przez 1024 może być i tak dłuższej ścieżki nie będzie oraz float dobrze dzieli przez potęgi 2)
         
-        for i in range(len(ret)):
-            ret[i] = 1/(ret[i])
+        if normalize:
+            for i in range(len(ret)):
+                ret[i] = 1/(ret[i])
 
         return ret
     
@@ -283,7 +308,7 @@ class MazeUtils:
             dir = self.from_which_direction(neighbor, origin)
 
             i = order.index(dir)
-            weight_f = self.weight_select_nodes(set([NodeTypes.VNOT_COLLECTED]))
+            weight_f = self.weight_select_nodes(set([NodeTypes.VIRTUAL]))
             self.graph.remove_edge(origin, neighbor)
             try:
                 ret[i] = nx.shortest_path_length(self.graph, neighbor, target, weight=weight_f) + 1
