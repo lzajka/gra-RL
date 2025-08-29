@@ -114,8 +114,7 @@ class GameState(AGameState):
         remaining_time = self.powerup_duration + self.time_elapsed - self.powerup_activate_start
         if self.powerup_duration <= 0 or remaining_time <= 0: return 0
 
-        normalized_time = remaining_time/self.powerup_duration
-        return normalized_time
+        return remaining_time
     
 
         
