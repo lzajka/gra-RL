@@ -69,11 +69,3 @@ class Player(P):
     def on_game_over(self, state):
         self.hunger = 0
         return super().on_game_over(state)
-    
-    def state_to_arr(self, state, mu):
-        # Ponieważ na razie pozostałe cechy są nam obojętne mozna się ich pozbyć
-        ret = super().state_to_arr(state, mu)
-        for i in range(len(ret) - 4):
-            ret[i] = 0
-
-        return ret
