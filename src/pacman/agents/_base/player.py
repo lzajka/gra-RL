@@ -86,12 +86,13 @@ class Player(APlayer):
     def _get_input_layer_size(game_config : GameConfig):
 
         vars = [
-            (4 + 4 + 1 + 1 + 4)*4 + 2,  # Jak blisko jest z każdego kierunku gracza (nie pozwala na zawrót ducha), Jak --||-- w przypadku odwrotu kierunku ducha, is_frightened, is_dead, kierunek ruchu + Brakujące cechy
-            1 + 4,                      # Ile energizerów jest zebranych, nawigacja do najbliższego
-            1,                          # Ile czasu zostało do zmieniania stanu Scatter <-> Chase
-            1,                          # Ile czasu będzie trwał powerup
-            4,                          # Nawigacja do najbliższego skrzyżowania
-            4                           # Nawigacja do najbliższego punktu
+            (4 + 4 + 4 + 4 + 1 + 1 + 1),                # Informacje o duchach
+            (1 + 4),                                # Informacje o energizerach
+            1,                                      # Czas do zmiany stanu
+            1,                                      # Czas do wygaśnięcia powerupa
+            4,                                      # Nawigacja do najbliższego skrzyżowania
+            4,                                      # Nawigacja do najbliższego punktu
+            4                                       # Ściany
         ]
 
         return sum(vars)
@@ -182,9 +183,8 @@ class Player(APlayer):
             *fright_nav, 
             *spawn_nav,
             alive_count / 4,
-            *([0] * 39), # Pozostałe cechy, których się pozbyłem.  Dodaje to, aby nie musieć ponownie trenować
-            is_scattered,
-            is_chasing
+            int(is_scattered),
+            int(is_chasing)
         ]
         return arr
     
@@ -210,7 +210,8 @@ class Player(APlayer):
     
     def _get_powerpellet_info(self, state : GameState, mu : MazeUtils, intersection : Position) -> List:
         energizers = mu.get_energizers()
-        amount = len(energizers)/4
+        working = sum([1 for e in energizers if not e.is_destroyed])
+        workingp = working/len(energizers)
 
         nav = [0] * 4
 
@@ -227,22 +228,33 @@ class Player(APlayer):
                 nav[i] = max(nav[i], nav2[i])
 
         return [
-            amount,
+            workingp,
             *nav
         ]
+    
+    def _get_walls(self, maze : Maze, position : Position, origin_dir : Direction):
+        walls = []
+        for i in range(4):
+            dir = self._directions[i]
+            relative_to_origin = dir.remove_rotation(origin_dir)
+            pos = maze.shift_position(position, relative_to_origin)
+            walls.append(int(maze.check_wall(pos)))
+        return walls
 
     def state_to_arr(self, state : GameState, mu : MazeUtils) -> List:
         from src.pacman.ghost_schedule import GhostSchedule
         maze : Maze = state.maze 
-        position = state.a_Pacman.get_position()
+        position = TO.to_int(state.a_Pacman.get_position())
+
             
         return [
             *self._get_ghost_info(state),
-            *self._get_powerpellet_info(state, mu, position),                               # 4
-            self._time_to_state_change(state),                                              # 1
-            Player._normalize_time(state.remaining_powerup_time),                           # 1
+            *self._get_powerpellet_info(state, mu, position),
+            self._time_to_state_change(state),
+            Player._normalize_time(state.remaining_powerup_time),
             *self.maze_utils.get_closest_dist_for_dirs(state, position, 'intersections'),
-            *self.maze_utils.get_closest_dist_for_dirs(state, position)                                   # 4
+            *self.maze_utils.get_closest_dist_for_dirs(state, position),
+            *self._get_walls(maze, position, state.a_Pacman.direction)
         ]        
     
     def can_make_a_decision(self, state : GameState):
