@@ -167,7 +167,8 @@ class MazeUtils:
         self._mark_cleared(pacman_pos, True)
     
     def get_energizers(self) -> List[Energizer]:
-        return self._energizers
+        ret = [e for e in self._energizers if not e.is_destroyed ]
+        return ret
 
     def normalize_position(self, position : Position):
         maze_size = self._maze.get_size()
