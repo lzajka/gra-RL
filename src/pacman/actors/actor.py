@@ -156,8 +156,8 @@ class Actor(MazeObject):
     @property
     def multiplier(self):
         value = self._get_speed_multiplier()
-        if self._base_speed * Decimal(value) > 1:
-            raise ValueError('Wynik mnożenia prędkości podstawowej i mnożnika większy niż 1.')
+        if self._base_speed * Decimal(value) >= 0.5:
+            raise ValueError('Wynik mnożenia prędkości podstawowej i mnożnika nie może być większy lub równy 0.5.')
         return Decimal(value)
 
     
@@ -254,7 +254,7 @@ class Actor(MazeObject):
         return int(path_center_block[0]), int(path_center_block[1])
 
 
-    def _check_if_intersection_crossed(self, current_pos : PrecisePosition, next_pos : PrecisePosition) -> Decimal:
+    def _check_if_intersection_crossed(self, current_pos : PrecisePosition, raw_next_pos : PrecisePosition) -> Decimal:
         """Sprawdza czy następny ruch aktora spowoduje przekroczenie skrzyżowania. Jeżeli tak zwraca ile przekroczył.
 
 
@@ -265,21 +265,21 @@ class Actor(MazeObject):
         :return: Liczba nieujemna jeżeli przekroczył, jeżeli nie przekroczył to -1. 
         :rtype: Decimal.
         """
-        offset = TupleOperations.subtract_tuples(next_pos, current_pos)
+        offset = TupleOperations.subtract_tuples(raw_next_pos, current_pos)
         # To działa jedynie wtedy jeżeli aktor porusza się w jednym kierunku. Dodatkowo to sprawdzam.
         if offset[0] != 0 and offset[1] != 0:
             raise ValueError("Aktor może poruszać się tylko w jednym kierunku.")
 
 
         # Sprawdź który blok może aktywować
-        path_center_block = Actor._get_path_center_block(current_pos, next_pos)
-        if not self._maze.is_intersection(path_center_block): return Decimal(-1)
+        path_center_block = Actor._get_path_center_block(current_pos, raw_next_pos)
+        if not self.is_intersection(self._maze.handle_outside_positions(path_center_block)): return Decimal(-1)
 
         # Spr
 
         # Oblicz dystansy
         distance_from_center = sum(TupleOperations.subtract_tuples(path_center_block, current_pos))
-        distance_traversed = sum(TupleOperations.subtract_tuples(next_pos, current_pos))
+        distance_traversed = sum(TupleOperations.subtract_tuples(raw_next_pos, current_pos))
         
         if distance_from_center < 0:
             distance_from_center = -distance_from_center
@@ -296,6 +296,9 @@ class Actor(MazeObject):
             self.direction = self.direction.add_rotation(Direction.DOWN)
             self.reverse_direction = False
 
+    
+    def is_intersection(self, pos):
+        return self._maze.is_intersection(pos)
 
     #@pysnooper.snoop('next_step.log', watch=('self.name'))
     def get_next_step(self, position : Position = None, precise_position : PrecisePosition = None, jump : Decimal = None, depth = 0) -> Tuple[Decimal, Decimal]:
@@ -327,7 +330,8 @@ class Actor(MazeObject):
         if changed_blocks:
             self._handle_reverse_signal()
 
-        future_pos = self._maze.shift_position(precise_position, self.direction, jump)
+        raw_future = self._maze.shift_position(precise_position, self.direction, jump, handle_outside=False)
+        future_pos = self._maze.handle_outside_positions(raw_future)
         next_block = self._maze.shift_position(position, self.direction)
 
         if self._pause > 0 and depth == 0:
@@ -357,25 +361,25 @@ class Actor(MazeObject):
         # Aby to zrobić w ostatniej chwili sprawdzam, czy następna pozycja znajduje się w innym bloku
         future_block = TupleOperations.round_tuple(future_pos)
         is_about_to_change_block = future_block != position
-        if is_about_to_change_block and depth == 0 and self._maze.is_intersection(future_block):
+        if is_about_to_change_block and depth == 0 and self.is_intersection(future_block):
             self.select_future_direction()
 
         # Obsłuż zmiany kierunków
 
-        intersection_crossed = self._check_if_intersection_crossed(precise_position, future_pos)
+        intersection_crossed = self._check_if_intersection_crossed(precise_position, raw_future)
         if intersection_crossed >= 0 and depth == 0:
-            intersection_pos = Actor._get_path_center_block(precise_position, future_pos)
+            raw_intersection_pos = self._maze.handle_outside_positions(Actor._get_path_center_block(precise_position, raw_future))
             self.on_intersection()
         
 
         if intersection_crossed > 0 and depth == 0:
-            return self.get_next_step(intersection_pos, tuple([Decimal(intersection_pos[0]), Decimal(intersection_pos[1])]), intersection_crossed, depth + 1)
+            return self.get_next_step(raw_intersection_pos, tuple([Decimal(raw_intersection_pos[0]), Decimal(raw_intersection_pos[1])]), intersection_crossed, depth + 1)
         
         if self._maze.check_wall(next_block) and is_touching:
             future_pos = self.on_hit_wall(precise_position, future_pos, next_block)
 
         # Dodatkowo jeżeli stoi na skrzyżowaniu wykonuj on_intersection
-        if self._maze.is_intersection(position) and depth == 0 and future_pos == position:
+        if self.is_intersection(position) and depth == 0 and future_pos == position:
             self.on_intersection()
 
 
@@ -389,7 +393,7 @@ class Actor(MazeObject):
         future_block = TupleOperations.round_tuple(future_position)
 
         changed_blocks = future_block != position
-        return self.changed_blocks and self._maze.is_intersection(future_block)
+        return self.changed_blocks and self.is_intersection(future_block)
     
     @property
     def about_to_change_blocks(self):

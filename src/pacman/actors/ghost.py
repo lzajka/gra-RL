@@ -99,7 +99,7 @@ class Ghost(Actor, Collidable):
     
     def _get_speed_multiplier(self):
         level = self._state.level
-        if self.is_dead: return Decimal('5')
+        if self.is_dead: return Decimal('4.5')
 
         if level == 1:
             if self.is_frightened: return Decimal('0.50')

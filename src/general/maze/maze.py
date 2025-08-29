@@ -45,10 +45,10 @@ class Maze:
 
         t = tuple(p)
         if is_int:
-            TO.to_int(TO.round_tuple(t))
+            TO.to_int(t)
         return t
 
-    def shift_position(self, origin : Tuple[Decimal, Decimal], direction : Direction, steps: Decimal = 1) -> Tuple[Decimal, Decimal]:
+    def shift_position(self, origin : Tuple[Decimal, Decimal], direction : Direction, steps: Decimal = 1, handle_outside = True) -> Tuple[Decimal, Decimal]:
         """Przesuwa pozycję o jeden krok w danym kierunku.
 
         :param origin: Pozycja początkowa w postaci krotki (x, y).
@@ -68,7 +68,11 @@ class Maze:
         elif direction == Direction.DOWN:
             r = (origin[0], origin[1] + steps)
 
-        return self.handle_outside_positions(r)
+        p = r
+        if handle_outside:
+            p = self.handle_outside_positions(p)
+
+        return p 
         
 
     def load_maze(self, file_path: str):
