@@ -155,6 +155,7 @@ class GhostSpawner(SpawnManager, Collidable):
         if ghost._is_dead:
             ghost._is_dead = False
             ghost._is_frightened = False
+            ghost.is_spawned = False
             self._spawn(ghost, False, False)
             
     

@@ -39,6 +39,7 @@ class GameState(AGameState):
         self.powerup_duration = 0.0
         self.schedule = None
         self.ai_bonus = 0
+        self.move_num = 0                           # To nie będzie kopiowane.
 
     def to_training_array(self) -> List[float]:
         """Zwraca stan gry jako tablicę do treningu.
