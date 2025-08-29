@@ -12,7 +12,7 @@ from logging import getLogger
 
 class NodeTypes(Enum):
     REGULAR         = 'regular'
-    VNOT_COLLECTED   = 'not_collected'
+    VIRTUAL   = 'not_collected'
 
 class MazeUtils:
     """Klasa dodająca dodatkowe metody związane z analizą labiryntów
@@ -23,10 +23,11 @@ class MazeUtils:
         self._pos2edge = dict()
         self._energizers : List[Energizer] = []
         self.real_nodes : List[Position]= []
+        self._energizers = []
         self._init_graph(self._maze)
-        self._detect_energizers(self._maze)
         self._prev_pacman_pos = (-1, -1)
         self._logger = getLogger(__name__)
+
     
     def debug_display(self):
         import tkinter as tk
@@ -84,8 +85,12 @@ class MazeUtils:
         initial_node = self._find_initial_node(maze)
         # Dodaj pierwszy wierzchołek
         self.graph.add_node(initial_node, node_type=NodeTypes.REGULAR)
-        # Dodaj wirtualny wierzchołek
-        self.graph.add_node('nc', node_type=NodeTypes.VNOT_COLLECTED)
+        # Dodaj wirtualne wierzchołki
+
+        self.graph.add_node('nc', node_type=NodeTypes.VIRTUAL)
+        self.graph.add_node('intersections', node_type=NodeTypes.VIRTUAL)
+        self.graph.add_node('energizers', node_type=NodeTypes.VIRTUAL)
+
         visited.add(initial_node)        
         # Znajdź sąsiadów
         neighbors = maze.get_neighbors(initial_node)
@@ -97,16 +102,26 @@ class MazeUtils:
             position: Position = stack.pop()
             
             # Sprawdź czy pusty
-            cleared = True
+            present = [False, False]
             objects = self._maze.get_objects_at(position)
-            for object in objects:
-                if isinstance(object, Point): cleared = False
-            
-            self._mark_cleared(position, cleared)
 
+
+            for o in objects:
+                if isinstance(o, Point): present[0] = True
+                if isinstance(o, Energizer): 
+                    present[1] = True
+                    self._energizers.append(o)
+            
+            self._set_tag(position, present[0], 'nc')
+            self._set_tag(position, present[1], 'energizers')
             # Skanuj sąsiadów
             neighbors = maze.get_neighbors(position)
             visited.add(position)
+
+            # Tutaj termin skrzyżowanie jest inaczej używany niż w reszcie tego projektu.
+            # Jest to punkt który sąsiaduje z min. 3 dostępnymi pozycjami
+            if len(neighbors) > 3:
+                self._set_tag(position, True, 'intersections')
 
             for n in neighbors:
                 self.graph.add_node(n, node_type=NodeTypes.REGULAR)
@@ -116,11 +131,11 @@ class MazeUtils:
 
         self.real_nodes = [n for n in self.graph.nodes if isinstance(n, Tuple)]
 
-    def _mark_cleared(self, position : Position, is_cleared : bool):
-        self.graph.add_edge(position, 'nc')
+    def _set_tag(self, position : Position, should_set : bool, master):
+        self.graph.add_edge(position, master)
         
-        if is_cleared:
-            self.graph.remove_edge(position, 'nc')
+        if not should_set:
+            self.graph.remove_edge(position, master)
             
     @property
     def real_edges(self):
@@ -134,12 +149,6 @@ class MazeUtils:
         
         return edges
 
-
-    def _detect_energizers(self, maze : Maze) -> List[Energizer]:
-        objects = maze.get_all_objects()
-        for s in objects:
-            for o in s:
-                if isinstance(o, Energizer): self._energizers.append(o)
 
     
     def _find_initial_node(self, maze : Maze) -> Position:
@@ -164,7 +173,8 @@ class MazeUtils:
         if self._prev_pacman_pos == pacman_pos:
             return
         self._prev_pacman_pos = pacman_pos
-        self._mark_cleared(pacman_pos, True)
+        self._set_tag(pacman_pos, False, 'energizers')
+        self._set_tag(pacman_pos, False, 'nc')
     
     def get_energizers(self) -> List[Energizer]:
         ret = [e for e in self._energizers if not e.is_destroyed ]
