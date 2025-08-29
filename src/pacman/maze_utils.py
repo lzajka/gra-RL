@@ -177,8 +177,7 @@ class MazeUtils:
         self._set_tag(pacman_pos, False, 'nc')
     
     def get_energizers(self) -> List[Energizer]:
-        ret = [e for e in self._energizers if not e.is_destroyed ]
-        return ret
+        return self._energizers
 
     def normalize_position(self, position : Position):
         maze_size = self._maze.get_size()
