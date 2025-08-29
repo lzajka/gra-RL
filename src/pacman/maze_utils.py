@@ -190,8 +190,8 @@ class MazeUtils:
         def w(start, end, _):
             # Można dać praktycznie nieskończony koszt jeżeli wracamy z wierzchołka wirtualnego
             stype : NodeTypes = graph.nodes[start]['node_type']
-            etype : NodeTypes = graph.nodes[start]['node_type']
-            if stype == etype:
+            etype : NodeTypes = graph.nodes[end]['node_type']
+            if stype == etype == NodeTypes.VIRTUAL:
                 raise ValueError('Nie można iść z wirtualnego do wirtualnego')
             elif stype == NodeTypes.VIRTUAL:
                 return 1024
