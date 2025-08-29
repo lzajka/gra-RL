@@ -32,6 +32,14 @@ class Linear_QNet(nn.Module):
             self.log.info(f"Model {file_name} załadowany pomyślnie.")
         else:
             raise FileNotFoundError(f"Model {file_name} nie znaleziony.")
+        
+    def __demonstrate(self, file_name):
+        if os.path.exists(file_name):
+            self.load_state_dict(torch.load(file_name))
+            self.eval()
+            self.log.info(f"Model {file_name} załadowany pomyślnie.")
+        else:
+            raise FileNotFoundError(f"Model {file_name} nie znaleziony.")
     
     def save(self):
         """Zapisuje model do pliku"""

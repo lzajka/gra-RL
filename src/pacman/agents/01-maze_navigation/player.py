@@ -3,7 +3,7 @@ from src.pacman.game_state import GameState
 from src.pacman.agents._base import Player as P
 from src.pacman.maze_utils import MazeUtils
 class Player(P):
-    def __init__(self, args, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=128, LR=1e-4):
+    def __init__(self, args, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=1024, LR=5e-5):
         super().__init__(args, config_overrides, MAX_MEMORY, BATCH_SIZE, LR)
         self.random = Random(10)
         self.hunger = 0

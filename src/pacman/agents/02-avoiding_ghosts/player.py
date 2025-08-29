@@ -5,16 +5,17 @@ from src.general.maze.maze import Maze
 from src.pacman.agents._base import Player as BPlayer
 from src.pacman.maze.objects import SpawnManager
 from src.general.utils import TupleOperations as TO
+from . import config_overrides
 
 class Player(BPlayer):
-    def __init__(self, args : Namespace, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=64, LR=5e-5):
+    def __init__(self, args : Namespace, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=512, LR=5e-5):
         if args.load_model is None:
             args.load_model = 'models/pacman-navi.pth'
         super().__init__(args, config_overrides, MAX_MEMORY, BATCH_SIZE, LR)
         self.random = Random(10)
 
     def should_explore(self):
-        epsilon = min(0.1, 0.7 - self.round_number/256)
+        epsilon = max(0.1, 0.4 - self.round_number/128/4)
         return self.random.random() <= epsilon
     
     def prepare_env(self, state):
@@ -36,6 +37,7 @@ class Player(BPlayer):
         SpawnManager.spawn(state.a_Blinky, now=True)
         SpawnManager.spawn(state.a_Pinky)
         self.spawn_flag = 0
+        self.prev_distances = [1024] * 4
         return ret
     
     def on_update(self, _state):
@@ -64,9 +66,25 @@ class Player(BPlayer):
 
             distances.append(how_close)
 
+        # Bonus za przetrwanie
 
         # Oblicz karę
-        for distance in distances:
-            if distance < 7:
-                state.ai_bonus -= 8/(distance + 1)
+        for i in range(len(distances)):
+            current_distance = distances[i]
+            prev_distance = self.prev_distances[i]
+
+            gotten_closer = current_distance < prev_distance
+            gotten_farther = current_distance > prev_distance
+
+            proximity = 5
+
+            if current_distance > proximity:
+                pass
+            elif gotten_closer:
+                state.ai_bonus -= 10 / (current_distance + 1)
+            elif gotten_farther:
+                state.ai_bonus += 5 / (prev_distance + 1)
+            
+                
+        self.prev_distances = distances
         return super().visit_state(state)
