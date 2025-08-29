@@ -34,26 +34,28 @@ class Player(P):
 
         dist = self.maze_utils.get_closest_dist_for_dirs(state, pacman_pos, normalize = False)
 
-        m = max(dist)
-
+        m = min(dist)
         hunger_mercy = False
 
         if self.prev_distance is None:
             self.prev_distance = m
             hunger_mercy = True
 
-        gotten_closer = m > self.prev_distance
+        gotten_closer = m < self.prev_distance
 
         # Dodatkowo kara czasowa
+        state.ai_bonus -= 2
 
-
-        # Tym mniejsze tym gorsze, dlatego chcemy ciągle to zwiększać        
+        # Tym mniejsze tym lepsze       
         if self.prev_collected == collected and not gotten_closer and not hunger_mercy:
             self.hunger += 1
+            state.ai_bonus -= 5
         elif self.prev_collected < collected:
             self.hunger = 0
+        
+        if gotten_closer:
+            state.ai_bonus += 5
 
-        state.ai_bonus += (m - self.prev_distance)
 
         if self.hunger > 30:
             state.a_Pacman.kill()
