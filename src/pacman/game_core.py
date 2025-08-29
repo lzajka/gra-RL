@@ -70,7 +70,7 @@ class GameCore(AGameCore, UsesMaze):
         if self.game_state.frame % (self.config.SKIPPED_FRAMES + 1) == 0:
             self.render()
         
-        self.fps_controller.tick(self.fps * self.config.TIME_SCALE)
+        self.fps_controller.tick(self.fps * self.config.FPS_SCALE)
         time_delta = 1.0/self.fps
         self.game_state.frame += 1
         self.game_state.time_elapsed += time_delta

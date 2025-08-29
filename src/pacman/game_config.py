@@ -54,5 +54,5 @@ class GameConfig:
     BASE_SPEED          = Decimal('0.1')
     FRAME_RATE          = 60
     RELATIVE_DIRECTION  = False
-    TIME_SCALE          = 1
+    FPS_SCALE          = 1
     SKIPPED_FRAMES      = 0
