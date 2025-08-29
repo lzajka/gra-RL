@@ -11,7 +11,7 @@ class Player(P):
 
     def should_explore(self):
         # Najpierw daj mu wyjść wykonać kilka pierwszych ruchów
-        epsilon = min(0.01, 0.4 - self.round_number/512)
+        epsilon = max(0.01, 0.75 - self.round_number/128)
         return self.random.random() <= epsilon
     
     def prepare_env(self, state):
