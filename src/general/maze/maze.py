@@ -93,16 +93,22 @@ class Maze:
                     pos[0] += 1
                 pos[1] += 1
 
-
-    
     def get_all_objects(self) -> List:
         """Zwraca listę wszystkich obiektów znajdujących się w labiryncie.
 
         :return: Lista wszystkich obiektów w labiryncie.
-        :rtype: List[MazeObject]
+        :rtype: List[Set[MazeObject]]
         """
         
         return self.objects_at.values()
+    
+    def get_all_objects2(self) -> List:
+        """Nowocześniejsza metoda zwracająca obiekty w labiryncie. W przeciwieństwie do get_all_objects
+
+        :return: Lista wszystkich obiektów w labiryncie.
+        :rtype: List[MazeObject]
+        """
+        return list(self.all_objects)
 
     def get_objects_at(self, pos : Tuple[int,int]):
         """Zwraca zbiór obiektów znajdujących się w danym miejscu labiryntu.
