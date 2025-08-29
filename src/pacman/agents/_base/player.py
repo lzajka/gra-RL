@@ -35,7 +35,7 @@ class Player(APlayer):
 
 
 
-    def __init__(self, args : ArgumentParser, config_overrides : dict = {}, MAX_MEMORY = 100_000, BATCH_SIZE = 32, LR = 1e-4, seed=10):
+    def __init__(self, args : ArgumentParser, config_overrides : dict = {}, MAX_MEMORY = 100_000, BATCH_SIZE = 1024, LR = 1e-5, seed=10):
         
         self.MAX_MEMORY = MAX_MEMORY
         self.BATCH_SIZE = BATCH_SIZE
@@ -86,11 +86,11 @@ class Player(APlayer):
     def _get_input_layer_size(game_config : GameConfig):
 
         vars = [
-            (2 + 2 + 1 + 1 + 1 + 4)*4,      # Pozycja relatywna, Pozycja relatywna celu, frightened, is_dead dla wszystkich duchów, dystans, kierunek
-            2,                          # Globalny stan duchów: is_chasing, is_scattered
-            (1+2+1)*4,                        # Informacja o zebraniu, pozycji, odległości każdego powerupa
+            (4 + 4 + 1 + 1 + 4)*4 + 2,  # Jak blisko jest z każdego kierunku gracza (nie pozwala na zawrót ducha), Jak --||-- w przypadku odwrotu kierunku ducha, is_frightened, is_dead, kierunek ruchu + Brakujące cechy
+            1 + 4,                      # Ile energizerów jest zebranych, nawigacja do najbliższego
             1,                          # Ile czasu zostało do zmieniania stanu Scatter <-> Chase
             1,                          # Ile czasu będzie trwał powerup
+            4,                          # Nawigacja do najbliższego skrzyżowania
             4                           # Nawigacja do najbliższego punktu
         ]
 
@@ -123,7 +123,7 @@ class Player(APlayer):
             ]
         return relative
 
-    def _get_ghosts_local_state(self, state : GameState) -> List:
+    def _get_ghost_info(self, state : GameState) -> List:
         from src.pacman.actors import Ghost
         ghosts : List[Ghost] = [state.a_Blinky , state.a_Pinky, state.a_Inky, state.a_Clyde]
         arr = []
@@ -131,35 +131,68 @@ class Player(APlayer):
         pacman_pos = TO.to_int(state.a_Pacman.get_position())
         pacman_dir = state.a_Pacman.direction
 
+        ghost_nav_a = [0] * 4
+        ghost_nav_b = [0] * 4
+        fright_nav = [0] * 4
+        
+        alive_count = 0
+
+
+        # Wszystkie duchy mają taką samą wartość tych zmiennych
+        is_chasing = ghosts[0].is_chasing
+        is_scattered = not is_chasing
+        spawn_point = ghosts[0].spawn_pos
+        spawn_nav = mu.navigate_to_position(pacman_pos, spawn_point, pacman_dir)
+
+
+
         for ghost in ghosts:
+            is_alive = not ghost.is_dead and ghost.is_spawned
+            if is_alive: alive_count += 1
+
             pos = TO.to_int(ghost.get_position())
+            if not is_alive: continue
 
-            # Duch normalnie nie może zawracać
-            nav_a = [0] * 4
-            prev_block = ghost.history[-2]
-            if prev_block != (-1, -1):
-                mu.graph.remove_edge(prev_block, pos)
-                nav_a = mu.navigate_to_position(pacman_pos, pos, pacman_dir)
-                mu.graph.add_edge(prev_block, pos)
+            if not ghost.is_frightened:
+                nav_a = [0] * 4
+                nav_b = [0] * 4
+                prev_block = ghost.history[-2]
+                if prev_block != (-1, -1):
+                    mu.graph.remove_edge(prev_block, pos)
+                    nav_a = mu.navigate_to_position(pacman_pos, pos, pacman_dir)
+                    # Teraz pozwól na cofnięcie się
+                    mu.graph.add_edge(prev_block, pos)
+                    nav_b = mu.navigate_to_position(pacman_pos, pos, pacman_dir)
 
-            pos = self.__class__._to_relative_pos(pacman_pos, pacman_dir, pos)
-            pos = mu.normalize_position(pos)
-            #target = mu.normalize_position(target)
-            dist = (1 - (abs(pos[0]) + abs(pos[1])))/2
 
-            arr += [
-                *nav_a,
-                int(ghost.is_frightened),
-                int(ghost.is_dead),
-                0,
-                *ghost.direction.remove_rotation(pacman_dir).get_dummies()
-            ]
+                for i in range(4):
+                    ghost_nav_a[i] = max(ghost_nav_a[i], nav_a[i])
+                    ghost_nav_b[i] = max(ghost_nav_b[i], nav_b[i])
+            else:
+                # Tutaj to my pacman goni ducha - nie interesuje go to, czy może się w tym kierunku poruszyć
+                nav = mu.navigate_to_position(pacman_pos, pos, pacman_dir)
+
+                for i in range(4):
+                    fright_nav[i] = max(nav[i], fright_nav[i])
+            
+
+        arr = [
+            *ghost_nav_a,
+            *ghost_nav_b,
+            *fright_nav, 
+            *spawn_nav,
+            alive_count / 4,
+            *([0] * 39), # Pozostałe cechy, których się pozbyłem.  Dodaje to, aby nie musieć ponownie trenować
+            is_scattered,
+            is_chasing
+        ]
         return arr
-
-    def _get_powerup_states(self, state : GameState, mu : MazeUtils) -> List[int]:
-        energizers = mu.get_energizers()
-        return [int(e.is_destroyed) for e in energizers]
     
+    @staticmethod 
+    def _normalize_time(remaining : float):
+        
+        return 1/(remaining+1)
+
     @staticmethod
     def _time_to_state_change(state : GameState):
         schedule : GhostSchedule = state.schedule
@@ -168,10 +201,35 @@ class Player(APlayer):
         duration = state_info.end - state_info.start
         elapsed = sched_timer - state_info.start
         if duration <= 0: raise RuntimeError('Nieprawidłowy harmonogram duchów. Czas trwania stanu jest ujemny.')
-        return elapsed/duration
+
+        remaining = duration - elapsed
+        if remaining < 0: remaining = 0
+
+        
+        return Player._normalize_time(remaining)
     
-    def _get_powerpellet_info(self, state : GameState, mu : MazeUtils, intersection : Position) -> List:        
-        return [0]*16
+    def _get_powerpellet_info(self, state : GameState, mu : MazeUtils, intersection : Position) -> List:
+        energizers = mu.get_energizers()
+        amount = len(energizers)/4
+
+        nav = [0] * 4
+
+        pacman = state.a_Pacman
+
+        pacman_pos = pacman.get_position()
+        pacman_dir = pacman.direction
+
+        for energizer in energizers:
+            pos = TO.to_int(energizer.get_position())
+            nav2 = mu.navigate_to_position(pacman_pos, pos, pacman_dir)
+            for i in range(len(nav2)):
+                # Znajdź z największą wartością
+                nav[i] = max(nav[i], nav2[i])
+
+        return [
+            amount,
+            *nav
+        ]
 
     def state_to_arr(self, state : GameState, mu : MazeUtils) -> List:
         from src.pacman.ghost_schedule import GhostSchedule
@@ -179,13 +237,12 @@ class Player(APlayer):
         position = state.a_Pacman.get_position()
             
         return [
-            *self._get_ghosts_local_state(state),                                           # 24 Dane duchów
-            int(state.a_Blinky.is_chasing),                                                 # 1 Ponieważ to stan globalny to można sprawdzić na jakimkolwiek duchu
-            int(not state.a_Blinky.is_chasing),                                             # 1
-            *self._get_powerpellet_info(state, mu, position),                               # 16
+            *self._get_ghost_info(state),
+            *self._get_powerpellet_info(state, mu, position),                               # 4
             self._time_to_state_change(state),                                              # 1
-            state.remaining_powerup_time,                                                   # 1
-            *self.maze_utils.get_closest_not_collected(state, position)                     # 4
+            Player._normalize_time(state.remaining_powerup_time),                           # 1
+            *self.maze_utils.get_closest_dist_for_dirs(state, position, 'intersections'),
+            *self.maze_utils.get_closest_dist_for_dirs(state, position)                                   # 4
         ]        
     
     def can_make_a_decision(self, state : GameState):
@@ -288,7 +345,7 @@ class Player(APlayer):
                     pygame.quit()
 
     def on_game_over(self, state):
-        if state.score > self.record:
+        if state.score >= self.record:
             self.record = state.score
             self.log.info(f'Nowy rekord: {self.record}')
             self.model.save()
@@ -315,6 +372,7 @@ class Player(APlayer):
         self.remember(state_old_pp, action_pp, reward, state_new_pp, new_state.is_game_over)
         self.pp_list.pop(0)
         # Wyświetl wynik
+        new_state.move_num = self.move_number
         self.stat_display.update(new_state)
 
     def on_update(self, state):
