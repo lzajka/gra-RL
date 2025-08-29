@@ -1,4 +1,5 @@
 from collections import deque
+from functools import cached_property
 from src.general.utils.tuple_operations import TupleOperations as TO
 from .actor import Actor
 from .ghost_state import GhostState
@@ -34,11 +35,13 @@ class Ghost(Actor, Collidable):
         self._gc = GameCore.get_main_instance()
         self._game_config : GameConfig = self._gc.get_game_config()
         self._is_chasing = False
-        self._is_dead = True
+        self._is_dead = False
+        self.is_spawned = False
         self._rng : Random = None
         self.history = deque(maxlen=5)
         self.history.append((-1, -1))
         self.history.append((-1, -1))
+        self.life_num = 0
 
         super().__init__(
             respawn_interval=respawn_interval, 
@@ -288,7 +291,6 @@ class Ghost(Actor, Collidable):
 
     def on_spawn(self):
         super().on_spawn()
-        self.is_chasing = False
 
         # Zrób tak aby duch decydował na pozycji spawnowej
         self.direction = Direction.LEFT
@@ -309,11 +311,13 @@ class Ghost(Actor, Collidable):
     
     def on_leave_ghost_pen(self):
         self._is_dead = False
+        self.is_spawned = True
         self.direction = Direction.LEFT
         self.history.clear()
         self.history.append((-1, -1))
         spawn_pos = TO.to_int(self.get_position())
         self.history.append(spawn_pos)
+        self.life_num = self.life_num + 1
 
     def kill(self):
         """Zabija ducha. Po zabiciu duch wraca na spawn.
@@ -323,8 +327,14 @@ class Ghost(Actor, Collidable):
         reward = self._game_config.GHOST_EAT_REWARD
         self._state.score += reward
         self._is_dead = True
+        current_life = self.life_num
+
+        def spawn_return_timeout(_):
+            if self.life_num == current_life:
+                self.set_position(self.spawn_pos)
+            
         
-        #start_time_timer(self._game_config.GHOST_SPAWN_RETURN_T, f, 4)
+        start_time_timer(3, spawn_return_timeout, 4)
 
         
     def on_enter(self, obj):
@@ -336,7 +346,6 @@ class Ghost(Actor, Collidable):
         state = self.get_state()
         if state == GhostState.FRIGHTENED:
             self.kill()
-            self._is_dead = True
         elif state == GhostState.EATEN:
             return
         else:
@@ -348,6 +357,12 @@ class Ghost(Actor, Collidable):
     @staticmethod
     def _reload1():
         Ghost.ghosts = []
+
+    @cached_property
+    def spawn_pos(self):
+        from src.pacman.maze.objects import SpawnManager
+        pos = SpawnManager.get_spawn(self)
+        return TO.to_int(pos)
 
 from src.general import reload_functions
 def _reload():
