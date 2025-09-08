@@ -120,7 +120,7 @@ class MazeUtils:
 
             # Tutaj termin skrzyżowanie jest inaczej używany niż w reszcie tego projektu.
             # Jest to punkt który sąsiaduje z min. 3 dostępnymi pozycjami
-            if len(neighbors) > 3:
+            if len(neighbors) >= 3:
                 self._set_tag(position, True, 'intersections')
 
             for n in neighbors:
