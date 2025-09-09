@@ -247,7 +247,7 @@ class Player(APlayer):
         position = TO.to_int(state.a_Pacman.get_position())
 
             
-        return [
+        r = [
             *self._get_ghost_info(state),
             *self._get_powerpellet_info(state, mu, position),
             self._time_to_state_change(state),
@@ -255,7 +255,8 @@ class Player(APlayer):
             *self.maze_utils.get_closest_dist_for_dirs(state, position, 'intersections'),
             *self.maze_utils.get_closest_dist_for_dirs(state, position),
             *self._get_walls(maze, position, state.a_Pacman.direction)
-        ]        
+        ]
+        return r
     
     def can_make_a_decision(self, state : GameState):
         prev_pos = self.prev_pos
