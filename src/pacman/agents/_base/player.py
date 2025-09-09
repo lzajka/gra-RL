@@ -357,6 +357,8 @@ class Player(APlayer):
                     pygame.quit()
 
     def on_game_over(self, state):
+        self.train_long_memory()
+
         if state.score >= self.record:
             self.record = state.score
             self.log.info(f'Nowy rekord: {self.record}')
