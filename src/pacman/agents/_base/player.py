@@ -211,7 +211,7 @@ class Player(APlayer):
     def _get_powerpellet_info(self, state : GameState, mu : MazeUtils, intersection : Position) -> List:
         energizers = mu.get_energizers()
         working = sum([1 for e in energizers if not e.is_destroyed])
-        workingp = working/len(energizers)
+        workingp = working/max(len(energizers),1)
 
         nav = [0] * 4
 
