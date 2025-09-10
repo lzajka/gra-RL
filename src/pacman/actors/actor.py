@@ -390,13 +390,15 @@ class Actor(MazeObject):
     
     @property
     def intersection_next_move(self):
+        # Nie powinno być problemu z pauzą spowodowaną zjedzeniem owoca
+        # Pauza zaczyna się po wejściu na blok, najdalsza możliwa pozycja jest poniżej 1
         position = self.get_position()
         precise_position = self.get_precise_position()
         future_position = self._maze.shift_position(precise_position, self.direction, self.speed)
         future_block = TupleOperations.round_tuple(future_position)
 
         changed_blocks = future_block != position
-        return self.changed_blocks and self.is_intersection(future_block)
+        return changed_blocks and self.is_intersection(future_block)
     
     @property
     def about_to_change_blocks(self):
