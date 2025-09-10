@@ -142,14 +142,15 @@ class Maze:
         return False
     
     @staticmethod
-    def to_center_pos(pos: PrecisePosition) -> PrecisePosition:
+    def to_center_pos(pos: Position | PrecisePosition) -> PrecisePosition:
         """Zwraca środkową pozycję dla danego bloku.
 
         :param pos: Pozycja bloku w postaci krotki (x, y). Pozycja ta opisuje lewy-górny róg.
-        :type pos: PrecisePosition
+        :type pos: PrecisePosition lub Position
         :return: Środkowa pozycja bloku w postaci krotki (x, y).
         :rtype: PrecisePosition
         """
+        pos = TO.to_decimal(pos)
         return (pos[0] + Decimal('0.5'), pos[1] + Decimal('0.5'))
     
     @staticmethod
