@@ -131,7 +131,6 @@ class Actor(MazeObject):
         actor_copy._is_tunneling = self._is_tunneling
         actor_copy._is_frightened = self._is_frightened
         actor_copy._level = self._level
-        actor_copy.history = self.history
         return actor_copy
         
 
