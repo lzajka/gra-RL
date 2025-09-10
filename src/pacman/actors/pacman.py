@@ -13,7 +13,7 @@ class Pacman(Actor):
     def __init__(self, state : Maze, respawn_interval: int = 0, name = 'Pacman', spawn=(0,0), **kwargs):
 
         super().__init__(respawn_interval=respawn_interval, name=name, state=state, spawn=spawn, **kwargs)
-        self.prepicked_direction = Direction.RIGHT
+        self.future_direction = Direction.RIGHT
         gc = GameCore.get_main_instance()
         self._game_config : GameConfig = gc.get_game_config()
 
@@ -60,11 +60,7 @@ class Pacman(Actor):
         :type direction: Direction
         """
         if direction is not None:
-            self.prepicked_direction = direction
-
-    
-    def on_intersection(self):
-        self.direction = self.prepicked_direction
+            self.future_direction = direction
     
     def is_intersection(self, pos):
         return True

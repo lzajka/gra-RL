@@ -14,6 +14,7 @@ from src.pacman.actors.actor import Position
 from random import Random
 from src.pacman.timer import start_time_timer
 from src.pacman.game_state import GameState
+from src.general.utils import Transaction
 
 class Ghost(Actor, Collidable):
     """Klasa implementująca aktora typu Ghost w grze pacman
@@ -214,9 +215,6 @@ class Ghost(Actor, Collidable):
             return self.get_chase_position()
         elif state == GhostState.FRIGHTENED:
             return self.get_frightened_position()
-
-    def on_intersection(self):
-        self.direction = self.future_direction
     
     def _get_color(self):
         if self.is_frightened:
@@ -229,14 +227,14 @@ class Ghost(Actor, Collidable):
         pass
 
         
-    def select_future_direction(self, allow_turnbacks: bool = False):
+    def select_future_direction(self, commit : Transaction,  allow_turnbacks: bool = False):
         """Wybiera następny kierunek ruchu ducha
         """
         target_pos = self.get_target()
 
         # Przesuń pozycję ducha o 1 krok
         pos = self.get_position()
-        next_pos = self._maze.shift_position(pos, self.direction)
+        next_pos = self._maze.shift_position(pos, commit.get_temp('direction'))
 
         
         # Teraz sprawdź, wszystkie kierunki wokół next_pos
@@ -273,7 +271,7 @@ class Ghost(Actor, Collidable):
                 winner = [direction, distance]
 
 
-        self.future_direction = winner[0]
+        commit.write_temp('future_direction', winner[0])
 
     def commit_changes(self, current_state):
         ret = super().commit_changes(current_state)

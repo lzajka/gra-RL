@@ -8,6 +8,7 @@ from collections import deque
 from decimal import Decimal, ROUND_DOWN
 from src.general.utils import TupleOperations
 from src.general.maze import PrecisePosition, Position
+from src.general.utils import Transaction
 detected_collisions = set()
 detected_last_time = set()
 
@@ -92,6 +93,7 @@ class Actor(MazeObject):
         self._state = state
         self._level = state.level
         self._is_tunneling = False
+        self.future_direction = None
         setattr(state, f'a_{self.__class__.__name__}', self)
 
         if not is_copy:
@@ -199,16 +201,12 @@ class Actor(MazeObject):
         pass
 
     
-    def select_future_direction(self):
+    def select_future_direction(self, commit : Transaction):
         """Ustawia przyszyły kierunek ruchu aktora (`self.future_direction`). Wywoływana na skrzyżowaniach.
         Domyślnie nie robi nic, ale może być nadpisana w klasach dziedziczących. 
         """
         pass
 
-    def on_intersection(self):
-        """Metoda wywoływana, gdy aktor znajduje się na skrzyżowaniu.
-        """
-        pass
 
     def on_hit_wall(self, current_pos : PrecisePosition, next_pos: PrecisePosition, wall_hit : Position) -> PrecisePosition:
         """Metoda wywoływana, gdy aktor próbuje przejść przez ścianę.
@@ -300,8 +298,7 @@ class Actor(MazeObject):
     def is_intersection(self, pos):
         return self._maze.is_intersection(pos)
 
-    #@pysnooper.snoop('next_step.log', watch=('self.name'))
-    def get_next_step(self, position : Position = None, precise_position : PrecisePosition = None, jump : Decimal = None, depth = 0) -> Tuple[Decimal, Decimal]:
+    def get_next_step(self, commit : Transaction, position : Position = None, precise_position : PrecisePosition = None, jump : Decimal = None, depth = 0) -> Tuple[Decimal, Decimal]:
         """Zwraca następny krok aktora w postaci krotki (x, y).
         Respektuje metodę pause
 
@@ -316,13 +313,19 @@ class Actor(MazeObject):
         :return: Następny krok w postaci krotki (x, y).
         :rtype: Tuple[float, float]
         """
+        gt = commit.get_temp
+        wt = commit.write_temp
+
         if position is None:
             position = self.get_position()
         if precise_position is None:
             precise_position = self.get_precise_position()
         if jump is None:
             jump = self.speed
-        changed_blocks = self._prev_block != position
+        changed_blocks = gt('_prev_block') != position
+
+        def on_intersection():
+            wt('direction', gt('future_direction'))
 
         if jump >= 1: 
             raise ValueError("Długość skoku musi być mniejsza niż 1. Obecna długość skoku: {}".format(jump))
@@ -330,12 +333,12 @@ class Actor(MazeObject):
         if changed_blocks:
             self._handle_reverse_signal()
 
-        raw_future = self._maze.shift_position(precise_position, self.direction, jump, handle_outside=False)
+        raw_future = self._maze.shift_position(precise_position, gt('direction'), jump, handle_outside=False)
         future_pos = self._maze.handle_outside_positions(raw_future)
-        next_block = self._maze.shift_position(position, self.direction)
+        next_block = self._maze.shift_position(position, gt('direction'))
 
-        if self._pause > 0 and depth == 0:
-            self._pause -= 1
+        if gt('_pause') > 0 and depth == 0:
+            wt('_pause', gt('_pause') - 1)
             return precise_position
         # Jeżeli aktor uderzył w ścianę, to zatrzymujemy go
         ## Najpierw sprawdzamy czy dotyka następnego pola
@@ -354,7 +357,7 @@ class Actor(MazeObject):
         # Zaktualizuj poprzedni blok
 
         if changed_blocks:
-            self._prev_block = self.get_position()
+            wt('_prev_block', self.get_position())
 
 
         # Ponieważ duch musi myśleć o 1 krok do przodu, to jeżeli następnym krokiem będzie skrzyżowanie, to wybieramy kierunek.
@@ -362,25 +365,25 @@ class Actor(MazeObject):
         future_block = TupleOperations.round_tuple(future_pos)
         is_about_to_change_block = future_block != position
         if is_about_to_change_block and depth == 0 and self.is_intersection(future_block):
-            self.select_future_direction()
+            self.select_future_direction(commit)
 
         # Obsłuż zmiany kierunków
 
         intersection_crossed = self._check_if_intersection_crossed(precise_position, raw_future)
         if intersection_crossed >= 0 and depth == 0:
             raw_intersection_pos = self._maze.handle_outside_positions(Actor._get_path_center_block(precise_position, raw_future))
-            self.on_intersection()
+            on_intersection()
         
 
         if intersection_crossed > 0 and depth == 0:
-            return self.get_next_step(raw_intersection_pos, tuple([Decimal(raw_intersection_pos[0]), Decimal(raw_intersection_pos[1])]), intersection_crossed, depth + 1)
+            return self.get_next_step(commit, raw_intersection_pos, tuple([Decimal(raw_intersection_pos[0]), Decimal(raw_intersection_pos[1])]), intersection_crossed, depth + 1)
         
         if self._maze.check_wall(next_block) and is_touching:
             future_pos = self.on_hit_wall(precise_position, future_pos, next_block)
 
         # Dodatkowo jeżeli stoi na skrzyżowaniu wykonuj on_intersection
         if self.is_intersection(position) and depth == 0 and future_pos == position:
-            self.on_intersection()
+            on_intersection()
 
 
         return future_pos
@@ -427,7 +430,9 @@ class Actor(MazeObject):
         :param current_state: Aktualny stan gry.
         :type current_state: GameState
         """
-        self.new_pos = self.get_next_step()
+        self._transaction = Transaction(self)
+        # New_pos nie jest zarządzany przez system transakcji ponieważ konieczne jest wykorzystanie metody set_position
+        self.new_pos = self.get_next_step(commit=self._transaction)
 
     def commit_changes(self, current_state: GameState):
         """Metoda wywoływana po aktualizacji wszystkich aktorów. Służy do zatwierdzenia zmian w stanie aktora.
@@ -435,6 +440,7 @@ class Actor(MazeObject):
         :param current_state: Aktualny stan gry.
         :type current_state: GameState
         """
+        self._transaction.commit()
         self.set_position(self.new_pos)
 
     def _detect_collisions(self, current_state: GameState):
