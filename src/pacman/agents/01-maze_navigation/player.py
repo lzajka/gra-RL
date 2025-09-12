@@ -3,7 +3,7 @@ from src.pacman.game_state import GameState
 from src.pacman.agents._base import Player as P
 from src.pacman.maze_utils import MazeUtils
 class Player(P):
-    def __init__(self, args, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=128, LR=5e-5):
+    def __init__(self, args, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=1024, LR=5e-5):
         super().__init__(args, config_overrides, MAX_MEMORY, BATCH_SIZE, LR)
         self.random = Random(10)
         self.hunger = 0
@@ -11,7 +11,7 @@ class Player(P):
 
     def should_explore(self):
         # Najpierw daj mu wyjść wykonać kilka pierwszych ruchów
-        epsilon = max(0.01, 0.5 - self.round_number/128)
+        epsilon = max(0.01, 0.50 - self.round_number/256)
         return self.random.random() <= epsilon
     
     def prepare_env(self, state):
