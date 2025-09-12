@@ -22,6 +22,7 @@ class Pacman(Actor):
         level = self._state.level
         
         if level == 1:
+            return Decimal('1')
             if self.is_frightened: return Decimal('0.9')
             else: return Decimal('0.8')
         elif 2 <= level <= 4:
