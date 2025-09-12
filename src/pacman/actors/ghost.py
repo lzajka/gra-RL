@@ -103,6 +103,7 @@ class Ghost(Actor, Collidable):
         if self.is_dead: return Decimal('4.5')
 
         if level == 1:
+            return Decimal('0.5')
             if self.is_frightened: return Decimal('0.50')
             elif self.is_tunneling: return Decimal('0.4')
             else: return Decimal('0.75')

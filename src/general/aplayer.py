@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from csv import writer
 from argparse import ArgumentParser
+from logging import getLogger
 
 class APlayer(ABC):
     from src.general.agame_core import AGameCore
@@ -21,6 +22,7 @@ class APlayer(ABC):
         self.round_number = 0
         self.move_number = 0
         self.prev_state_copy = True
+        self.log = getLogger(__name__)
 
         stats_path = args.output_stats
 
@@ -87,6 +89,7 @@ class APlayer(ABC):
         is_running = True
         config = self.game_config
         while is_running:
+            self.log.info(f'==========Runda {self.round_number + 1}==========')
             old_state = None
             # Zresetuj grę i wczytaj stan początkowy
             state = self.game.restart(config)
