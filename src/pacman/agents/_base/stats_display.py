@@ -9,7 +9,7 @@ class StatsDisplay(AGameStatsDisplay):
         super().__init__(fig, window_geometry='1400x600', redraw_interval=2000)
         self.prev_score = 0
         self.maze_utils : MazeUtils = None
-        self.ai_bonuses = []
+        self.bonuses = []
 
     def gather_stats(self, state : GameState):
         """Metoda wywoływana przy każdym kroku gry. Wyświetla statystyki gry."""
@@ -17,7 +17,7 @@ class StatsDisplay(AGameStatsDisplay):
         
         if state.is_game_over: 
             self.add_new_score(self.prev_score)
-            self.ai_bonuses.append(state.ai_bonus / state.move_num)
+            self.bonuses.append((state.ai_bonus, state.move_num))
             self.prev_score = 0
         self.prev_score = score
 
@@ -30,23 +30,35 @@ class StatsDisplay(AGameStatsDisplay):
     def plot_score(self, ax):
 
         super().plot_score(ax)
-        x = list(range(1, len(self.ai_bonuses) + 1))
+        x = list(range(1, len(self.bonuses) + 1))
 
-        penalties = []
-        bonuses = []
+        round_bonuses = []
+        round_penalties = []
+        average_penalties = []
+        average_bonuses = []
 
-        for score in self.ai_bonuses:
-            bonus = 0
-            penalty = 0
+        for (round_score, move_num) in self.bonuses:
+            round_bonus = 0
+            round_penalty = 0
+            average_bonus = 0
+            average_penalty = 0
 
-            if score > 0: bonus = score
-            elif score < 0: penalty = -score
+            if round_score >= 0: round_bonus = round_score
+            else: round_penalty = -round_score
 
-            bonuses.append(bonus)
-            penalties.append(penalty)
+            average_bonus = round_bonus/move_num
+            average_penalty = round_penalty/move_num
 
-        ax.plot(x, bonuses, label='Bonusy AI', linestyle='--')
-        ax.plot(x, penalties, label='Kary AI', linestyle='--')
+            round_bonuses.append(round_bonus)
+            round_penalties.append(round_penalty)
+            average_bonuses.append(average_bonus)
+            average_penalties.append(average_penalty)
+
+
+        ax.plot(x, average_bonuses, label='Bonusy AI/tick', color='green', linestyle='--')
+        ax.plot(x, round_bonuses, label='Bonusy AI', color='green')
+        ax.plot(x, average_penalties, label='Kary AI/tick', color='red', linestyle='--')
+        ax.plot(x, round_penalties, label='Kary AI', color='red')
 
         ax.legend()
 
