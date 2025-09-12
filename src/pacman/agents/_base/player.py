@@ -283,7 +283,6 @@ class Player(APlayer):
         elif state.is_game_over:
             self.log.info('Pacman osiągnął koniec gry - Dodatkowy stan decyzyjny końcowy')
             self.stuck_start = float('inf')
-            self.on_game_over(state)
             return True
         elif MazeUtils.crossed_center(current_pos, future_pos):
             self.log.info('Pacman w następnym ruchu przejdzie przez środek - Stan decyzyjny')
