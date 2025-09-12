@@ -183,6 +183,58 @@ class MazeUtils:
         maze_size = self._maze.get_size()
         return float(position[0] / maze_size[0]), float(position[1] / maze_size[1])
     
+    @staticmethod
+    def crossed_center(pos_a : PrecisePosition, pos_b : PrecisePosition) -> bool:
+        """Metoda zwraca true jeżeli przekroczono środek.
+
+        :param pos_a: Pozycja punktu A
+        :type pos_a: PrecisePosition
+        :param pos_b: Pozycja punktu B
+        :type pos_b: PrecisePosition
+        :return: Jeżeli linia pomiędzy punktami A oraz B przechodzi przez środek bloku zwraca `True`. W przeciwieństwie `False`
+        :rtype: bool
+        """
+        # Sprawdzanie, czy pozycja jest po przejściu przez tunel nie jest konieczne.
+        # Jeśli przeskoczy na drugą stronę - zmieni blok, a więc poniższe if zwróci fałsz
+
+        # Ponieważ długość skoku jest < 0.5 . Pozycja może jedynie przeskoczyć przez środek, jeżeli oba pozycje znajdują się w bloku.
+        if TO.round_tuple(pos_a) != TO.round_tuple(pos_b):
+            return False
+        
+        # Jeżeli pozycja się nie zmieniła zwróć Fałsz
+        if pos_a == pos_b:
+            return False
+        
+        center_a = Maze.to_center_pos(pos_a)
+        center_b = Maze.to_center_pos(pos_b)
+
+
+        block : PrecisePosition = TO.round_tuple(pos_a)
+        block_center = Maze.to_center_pos(block)
+
+        # Znajdź oś po której się poruszono
+        axis : List[PrecisePosition, PrecisePosition, PrecisePosition] = None
+
+        for i in range(2):
+            p = [center_a[i], center_b[i]]
+            # Posortuj pozycje, aby kolejność koordynatów była rosnąca.
+            p.sort()
+            p.append(block_center[i])
+            # Dodaj środek
+
+            axis_changed = p[0] != p[1]
+
+            if axis_changed and axis is not None:
+                # W moim przypadku jeżeli nastąpiła zmiana osi to oznacza, że przeszedł przez środek
+                return True
+            elif axis_changed:
+                axis = p
+
+        crossed_center = axis[0] <= axis[2] <= axis[1]
+        return crossed_center
+
+
+    
     def distance_to(self, position : Position, target):
         graph = self.graph
 
