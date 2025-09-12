@@ -221,6 +221,7 @@ class Player(APlayer):
         pacman_dir = pacman.direction
 
         for energizer in energizers:
+            if energizer.is_destroyed: continue
             pos = TO.to_int(energizer.get_position())
             nav2 = mu.navigate_to_position(pacman_pos, pos, pacman_dir)
             for i in range(len(nav2)):
