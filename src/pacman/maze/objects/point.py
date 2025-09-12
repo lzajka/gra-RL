@@ -81,7 +81,7 @@ class Point(MazeObject, Collidable):
         self._state.score += self.get_reward()
         self._state.collected[self.get_point_type()] += 1
         self._check_if_all_collected()
-        pacman.pause(self._eat_length())
+        #pacman.pause(self._eat_length())
         self.destroy()
 
             
