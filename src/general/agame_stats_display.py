@@ -10,6 +10,7 @@ from src.general.agame_state import AGameState
 from tkinter import Tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from time import time_ns
+from collections import deque
 
 class AGameStatsDisplay(ABC):
 
@@ -18,13 +19,13 @@ class AGameStatsDisplay(ABC):
     Zawiera metody 
     """
 
-    def __init__(self, fig = Figure(figsize=(15, 10)), redraw_interval = 500, window_geometry = '800x600'):
+    def __init__(self, fig = Figure(figsize=(15, 10)), redraw_interval = 500, window_geometry = '800x600', recent_score_len=30):
         """Konstruktor klasy AGameStats. Inicjalizuje zmienne do przechowywania wyników gry."""
 
 
         self.best_scores = []
         self.average_scores = []
-        self.score_sum = 0
+        self.recent_scores = deque(maxlen=recent_score_len)
         self.scores = []
         self.figure = fig
         self.redraw_interval = redraw_interval 
@@ -100,8 +101,10 @@ class AGameStatsDisplay(ABC):
         
 
         # Średni wynik
-        self.score_sum += score
-        self.average_scores.append(self.score_sum / score_count)
+        self.recent_scores.append(score)
+
+        # 
+        self.average_scores.append(sum(self.recent_scores) / len(self.recent_scores))
         
         
     def plot_score(self, ax : Axes) -> Axes:
@@ -127,8 +130,8 @@ class AGameStatsDisplay(ABC):
         x = list(range(1, score_count + 1))
 
         ax.plot(x, self.best_scores, label='Najlepszy wynik', color='blue')
+        ax.plot(x, self.scores, label='Aktualny wynik', color='cyan')
         ax.plot(x, self.average_scores, label='Średni wynik', color='orange')
-        ax.plot(x, self.scores, label='Aktualny wynik', color='green')
 
         ax.legend()
         ax.set_ylim(bottom=0)        
