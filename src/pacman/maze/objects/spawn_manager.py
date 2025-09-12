@@ -22,7 +22,6 @@ class SpawnManager(MazeObject):
         """
         from src.pacman.game_core import GameCore
 
-        self.spawn_pos = pos
         self._state : GameState = state
         super().__init__(pos, False)
         self.cfg = GameCore.get_main_instance().get_game_config()
@@ -46,11 +45,16 @@ class SpawnManager(MazeObject):
 
     @staticmethod
     def get_spawn(actor : Actor):
+        spawner : 'SpawnManager' = None
         if isinstance(actor, Ghost):
-            return GhostSpawner.instance._get_spawn()
+            spawner = GhostSpawner.instance
         elif isinstance(actor, Pacman):
-            return PacmanSpawner.instance._get_spawn()
-    
+            spawner = PacmanSpawner.instance
+        
+        if spawner is None:
+            raise ValueError(f'Nie znaleziono spawnera dla obiektu {actor}')
+        
+        return spawner.get_position()
 
     def _get_color(self):
         return None
@@ -73,16 +77,16 @@ class PacmanSpawner(SpawnManager):
         PacmanSpawner.instance = self
         super().__init__(position, parent)
 
-    def _get_spawn(self):
-        return self.spawn_pos
 
     def draw(self):
         """Nic nie rysuj
         """
         pass
+    def erase(self):
+        pass
     
     def _spawn(self, obj : Actor, now : bool):
-        obj.set_position(self.spawn_pos)
+        obj.set_position(self.get_position())
         obj.on_spawn()
 
 
@@ -102,9 +106,6 @@ class GhostSpawner(SpawnManager, Collidable):
         return None
     def _get_named_layer(self):
         return 'map'
-    
-    def _get_spawn(self):
-        return self.spawn_pos
 
     def _release_ghost(self, _):
         q = self.spawn_queue
@@ -112,7 +113,7 @@ class GhostSpawner(SpawnManager, Collidable):
             return
         
         obj : Ghost = q.popleft()
-        obj.set_position(self.spawn_pos)
+        obj.set_position(self.get_position())
         obj.on_leave_ghost_pen()
         self.prev_ghost = obj
  
@@ -125,7 +126,7 @@ class GhostSpawner(SpawnManager, Collidable):
         obj : Ghost = obj
         q = self.spawn_queue
 
-        pos = self.spawn_pos
+        pos = self.get_position()
 
         if not now:
             pos = self._maze.shift_position(pos, Direction.DOWN, 1)
