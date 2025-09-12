@@ -317,7 +317,8 @@ class Player(APlayer):
 
         states, actions, rewards, next_states, dones = zip(*sample)
 
-        self.trainer.train_step(states, actions, rewards, next_states, dones)
+        loss = self.trainer.train_step(states, actions, rewards, next_states, dones)
+        self.stat_display.add_loss(loss)
 
     def train_short_memory(self, state, action, reward, next_state, done):
         self.trainer.train_step(state, action, reward, next_state, done)

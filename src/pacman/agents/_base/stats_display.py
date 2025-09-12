@@ -1,3 +1,4 @@
+from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 from src.pacman.maze_utils import MazeUtils
 from src.pacman.game_state import GameState
@@ -6,10 +7,12 @@ from matplotlib.pyplot import plot
 class StatsDisplay(AGameStatsDisplay):
     
     def __init__(self, fig = Figure(figsize=(20, 10), dpi=70)):
-        super().__init__(fig, window_geometry='1400x600', redraw_interval=2000)
+        super().__init__(fig, window_geometry='1400x1200', redraw_interval=2000)
         self.prev_score = 0
         self.maze_utils : MazeUtils = None
         self.bonuses = []
+        self.losses = []
+        self.losses_x = []
 
     def gather_stats(self, state : GameState):
         """Metoda wywoływana przy każdym kroku gry. Wyświetla statystyki gry."""
@@ -21,11 +24,25 @@ class StatsDisplay(AGameStatsDisplay):
             self.prev_score = 0
         self.prev_score = score
 
+    def add_loss(self, loss):
+        self.losses.append(loss)
+        if len(self.losses_x) == 0:
+            self.losses_x.append(1)
+        else:    
+            self.losses_x.append(self.losses_x[-1] + 1)
+
     def redraw(self):
-        ax_score = self.figure.add_subplot(1, 2, 1)
-        ax_graph = self.figure.add_subplot(1, 2, 2)
+        ax_score = self.figure.add_subplot(2, 2, 1)
+        ax_map = self.figure.add_subplot(2, 2, 2)
+        ax_loss = self.figure.add_subplot(2,2,3)
+
         self.plot_score(ax_score)
-        self.maze_utils.draw(ax_graph)
+        self.maze_utils.draw(ax_map)
+        self.draw_loss(ax_loss)
+
+    def draw_loss(self, ax : Axes):
+        ax.plot(self.losses_x, self.losses, label='Funkcja straty')
+        ax.legend()
 
     def plot_score(self, ax):
 
