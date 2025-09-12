@@ -93,6 +93,8 @@ class Drawable(ABC):
 
     def erase(self):
         """Czyści obiekt z ekranu."""
+        if self._get_color() is None:
+            return
         game_core = self._get_game_core()
         position = self._pos()
         filled_ratio = self._get_filled_ratio()
