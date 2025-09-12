@@ -259,15 +259,17 @@ class Player(APlayer):
         return r
     
     def can_make_a_decision(self, state : GameState):
+        from src.general.utils import Transaction
         prev_pos = self.prev_pos
-
-        new_pos = state.a_Pacman.get_precise_position()
-        new_pos_int = state.a_Pacman.get_position()
-        self.prev_pos = new_pos
         prev_pos_int = self.prev_pos_int
-        self.prev_pos_int = new_pos_int
+        current_pos = state.a_Pacman.get_precise_position()
+        current_pos_int = state.a_Pacman.get_position()
         
-        is_stuck = prev_pos == new_pos
+        is_stuck = prev_pos == current_pos
+        self.prev_pos = current_pos
+        self.prev_pos_int = current_pos_int
+
+        future_pos = state.a_Pacman.get_next_step(Transaction(state.a_Pacman))
 
         if is_stuck:
             self.stuck_start = min(state.time_elapsed, self.stuck_start)
@@ -283,8 +285,8 @@ class Player(APlayer):
             self.stuck_start = float('inf')
             self.on_game_over(state)
             return True
-        elif prev_pos_int != new_pos_int:
-            self.log.info('Pacman doszedł do skrzyżowania - Stan decyzyjny')
+        elif MazeUtils.crossed_center(current_pos, future_pos):
+            self.log.info('Pacman w następnym ruchu przejdzie przez środek - Stan decyzyjny')
             self.stuck_start = float('inf')
             return True
         else:
