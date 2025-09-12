@@ -6,4 +6,4 @@ GameConfig.FPS_SCALE = 0
 GameConfig.DEATH_REWARD = -500
 GameConfig.FRUIT_REWARD += 100
 GameConfig.RELATIVE_DIRECTION = True
-GameConfig.SKIPPED_FRAMES = 8
+GameConfig.SKIPPED_FRAMES = 16

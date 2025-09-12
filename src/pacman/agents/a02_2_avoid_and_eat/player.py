@@ -122,9 +122,9 @@ class Player(BPlayer):
         e_stayed = self.prev_distance_e is not None and energizer_dist == self.prev_distance_e and energizer_reachable
 
         if egotten_closer:
-            bonus += 50/energizer_dist
+            bonus += 20/energizer_dist
         elif egotten_further:
-            bonus -= 60/(energizer_dist + 1)
+            bonus -= 25/(energizer_dist + 1)
         
 
         # Oblicz odległości między różnymi aktywnymi typami duchów
@@ -169,7 +169,7 @@ class Player(BPlayer):
             # Nagroda za oddalenie się
 
             if delta_d > 0 and ghost_distance['dangerous'] <= 5:
-                bonus -= 150 / (ghost_distance['dangerous'] + 4)
+                bonus += 150 / (ghost_distance['dangerous'] + 4)
             
             # Kara czasowa
             bonus -= 1
