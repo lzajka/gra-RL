@@ -3,7 +3,7 @@ from src.pacman.game_state import GameState
 from src.pacman.agents._base import Player as P
 from src.pacman.maze_utils import MazeUtils
 class Player(P):
-    def __init__(self, args, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=1024, LR=5e-5):
+    def __init__(self, args, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=1024, LR=1e-4):
         super().__init__(args, config_overrides, MAX_MEMORY, BATCH_SIZE, LR)
         self.random = Random(10)
         self.hunger = 0
@@ -11,7 +11,7 @@ class Player(P):
 
     def should_explore(self):
         # Najpierw daj mu wyjść wykonać kilka pierwszych ruchów
-        epsilon = max(0.01, 0.50 - self.round_number/256)
+        epsilon = max(0.1, 0.5 - self.round_number/256)
         return self.random.random() <= epsilon
     
     def prepare_env(self, state):
@@ -44,20 +44,20 @@ class Player(P):
         gotten_closer = m < self.prev_distance
 
         # Dodatkowo kara czasowa
-        state.ai_bonus -= 2
+        state.ai_bonus -= 0.3
 
         # Tym mniejsze tym lepsze       
         if self.prev_collected == collected and not gotten_closer and not hunger_mercy:
             self.hunger += 1
-            state.ai_bonus -= 15
+            state.ai_bonus -= 0.2
         elif self.prev_collected < collected:
             self.hunger = 0
         
         if gotten_closer:
-            state.ai_bonus += 10
+            state.ai_bonus += 0.2
 
 
-        if self.hunger > 30:
+        if self.hunger > 70:
             state.a_Pacman.kill()
         # Ponieważ wynik się zmniejszy zaaktualizuj prev_score
         self.prev_collected = collected

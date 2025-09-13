@@ -56,3 +56,4 @@ class GameConfig:
     RELATIVE_DIRECTION  = False
     FPS_SCALE          = 1
     SKIPPED_FRAMES      = 0
+    SGHOST_CLOSEST_PROX_TO_SPLAYER = 5

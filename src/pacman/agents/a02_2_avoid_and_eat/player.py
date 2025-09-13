@@ -10,7 +10,7 @@ from src.pacman.maze_utils import MazeUtils
 from src.pacman.game_state import GameState
 
 class Player(BPlayer):
-    def __init__(self, args : Namespace, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=1000, LR=5e-5):
+    def __init__(self, args : Namespace, config_overrides = ..., MAX_MEMORY=100_000, BATCH_SIZE=1000, LR=1e-4):
         if args.load_model is None:
             args.load_model = 'models/pacman-01-maze_navigation.pth'
         super().__init__(args, config_overrides, MAX_MEMORY, BATCH_SIZE, LR)
@@ -63,7 +63,7 @@ class Player(BPlayer):
         return r
 
     def should_explore(self):
-        epsilon = max(0.1, 0.5 - self.round_number/512)
+        epsilon = max(0.05, 0.35 * ( 1 - self.round_number/256))
         return self.random.random() <= epsilon
     
     def _reinforce_points(self, state : GameState):
@@ -87,12 +87,12 @@ class Player(BPlayer):
         # Tym mniejsze tym lepsze       
         if self.prev_collected == collected and not gotten_closer and not hunger_mercy:
             self.hunger += 1
-            state.ai_bonus -= 15
+            state.ai_bonus -= 0.2
         elif self.prev_collected < collected:
             self.hunger = 0
         
         if gotten_closer:
-            state.ai_bonus += 10
+            state.ai_bonus += 0.2
 
 
         if self.hunger > 70:
@@ -102,15 +102,14 @@ class Player(BPlayer):
         self.last_visit = state.time_elapsed
         self.prev_distance = m
 
-    def visit_state(self, state):
+    
+    def _reinforce_ghosts(self, state : GameState):
         from src.pacman.actors import Ghost
-
+        bonus = 0
         ghosts : List[Ghost] = [state.a_Blinky, state.a_Pinky, state.a_Inky, state.a_Clyde]
         pacman_pos = TO.to_int(state.a_Pacman.get_position())
         mu = self.maze_utils
-        bonus = 0
 
-        self._reinforce_points(state)
         energizer_dist = self.maze_utils.distance_to(pacman_pos, 'energizers')
         energizer_reachable = energizer_dist < 1024
 
@@ -122,9 +121,9 @@ class Player(BPlayer):
         e_stayed = self.prev_distance_e is not None and energizer_dist == self.prev_distance_e and energizer_reachable
 
         if egotten_closer:
-            bonus += 20/energizer_dist
+            bonus += 2/(energizer_dist)
         elif egotten_further:
-            bonus -= 25/(energizer_dist + 1)
+            bonus -= 3/(energizer_dist + 1)
         
 
         # Oblicz odległości między różnymi aktywnymi typami duchów
@@ -156,28 +155,40 @@ class Player(BPlayer):
             # Nie karaj jeżeli jest mało czasu
             remaining_powerup = state.remaining_powerup_time
             if delta_f < 0 and remaining_powerup > 1:
-                bonus += 150 / (ghost_distance['frightened'] + 5)
+                b = 0.7
+                self.log.debug(f'Zbliżono się do przestraszonego ducha: {b}')
+                bonus += b
 
             if delta_f > 0 and remaining_powerup > 1:
-                bonus -= 175 / (ghost_distance['frightened'] + 5)
+                b = -0.7
+                self.log.debug(f'Oddalono się od przestraszonego ducha: {b}')
+                bonus += b
 
             # Dodaj karę za zbliżenie się do nieprzestraszonego ducha
-
-            if delta_d < 0 and ghost_distance['dangerous'] <= 5:
-                bonus -= 175 / (ghost_distance['dangerous'] + 4)
+            safe_dist = 5
+            if delta_d < 0 and ghost_distance['dangerous'] <= safe_dist:
+                b = - (safe_dist / (ghost_distance['dangerous'] + 1))
+                self.log.debug(f'Zbliżono się do groźnego ducha: {b}')
+                bonus += b 
 
             # Nagroda za oddalenie się
 
             if delta_d > 0 and ghost_distance['dangerous'] <= 5:
-                bonus += 150 / (ghost_distance['dangerous'] + 4)
+                b = 1.5 * (safe_dist / ghost_distance['dangerous'])
+                self.log.debug(f'Oddalono się od groźnego ducha: {b}')
+                bonus += b
             
-            # Kara czasowa
-            bonus -= 1
-
-
         state.ai_bonus += bonus
         self.prev_distance_e = energizer_dist
         self.prev_distance_ghost = ghost_distance.copy()
+
+
+    def visit_state(self, state):
+
+        self._reinforce_points(state)
+        self._reinforce_ghosts(state)
+
+        state.ai_bonus -= 0.3
         return super().visit_state(state)
     
     
