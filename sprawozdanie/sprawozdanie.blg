@@ -1,0 +1,14 @@
+[0] Config.pm:328> INFO - This is Biber 2.21
+[0] Config.pm:331> INFO - Logfile is 'sprawozdanie.blg'
+[125] biber:342> INFO - === sob wrz 13, 2025, 17:41:49
+[148] Biber.pm:421> INFO - Reading 'sprawozdanie.bcf'
+[261] Biber.pm:1002> INFO - Found 4 citekeys in bib section 0
+[285] Biber.pm:4487> INFO - Processing section 0
+[296] Biber.pm:4678> INFO - Looking for bibtex file './bibtex.bib' for section 0
+[297] bibtex.pm:1713> INFO - LaTeX decoding ...
+[301] bibtex.pm:1519> INFO - Found BibTeX data source './bibtex.bib'
+[398] UCollate.pm:68> INFO - Overriding locale 'pl-PL' defaults 'variable = shifted' with 'variable = non-ignorable'
+[398] UCollate.pm:68> INFO - Overriding locale 'pl-PL' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[398] Biber.pm:4307> INFO - Sorting list 'nty/global//global/global/global' of type 'entry' with template 'nty' and locale 'pl-PL'
+[413] bbl.pm:676> INFO - Writing 'sprawozdanie.bbl' with encoding 'UTF-8'
+[416] bbl.pm:779> INFO - Output to sprawozdanie.bbl

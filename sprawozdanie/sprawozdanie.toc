@@ -1,0 +1,24 @@
+\babel@toc {polish}{}\relax 
+\contentsline {chapter}{\numberline {1}Wstęp}{3}{}%
+\contentsline {section}{\numberline {1.1}Cel projektu}{3}{}%
+\contentsline {section}{\numberline {1.2}Wykorzystane biblioteki}{3}{}%
+\contentsline {chapter}{\numberline {2}Część ogólna}{4}{}%
+\contentsline {section}{\numberline {2.1}Struktura projektu}{4}{}%
+\contentsline {section}{\numberline {2.2}Struktura gier}{5}{}%
+\contentsline {section}{\numberline {2.3}Skrypt uruchamiający}{5}{}%
+\contentsline {chapter}{\numberline {3}Snake}{7}{}%
+\contentsline {section}{\numberline {3.1}Model AI - DQN}{7}{}%
+\contentsline {section}{\numberline {3.2}Wyniki}{7}{}%
+\contentsline {section}{\numberline {3.3}Porównanie wyników uzyskanych przez \\ model AI z wynikami uzyskanymi przez człowieka}{7}{}%
+\contentsline {chapter}{\numberline {4}Pac-Man}{10}{}%
+\contentsline {section}{\numberline {4.1}Utworzenie gry}{10}{}%
+\contentsline {section}{\numberline {4.2}Zasady gry}{11}{}%
+\contentsline {section}{\numberline {4.3}Model AI - DQN}{11}{}%
+\contentsline {subsection}{\numberline {4.3.1}Cechy}{11}{}%
+\contentsline {subsection}{\numberline {4.3.2}Trenowanie}{12}{}%
+\contentsline {subsubsection}{Nawigacja labiryntu}{12}{}%
+\contentsline {subsubsection}{Unikanie i zjadanie duchów}{13}{}%
+\contentsline {subsubsection}{Pełna gra}{13}{}%
+\contentsline {subsection}{\numberline {4.3.3}Wyniki}{13}{}%
+\contentsline {subsection}{\numberline {4.3.4}Wnioski}{13}{}%
+\contentsline {subsection}{\numberline {4.3.5}Pomysły na poprawę jakości modelu}{13}{}%

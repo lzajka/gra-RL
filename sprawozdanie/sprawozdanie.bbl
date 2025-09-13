@@ -1,0 +1,154 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.3 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{nty/global//global/global/global}
+    \entry{CBPacman}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=557ca75c6a64c6628584f314120df93f}{%
+           family={CodeBullet},
+           familyi={C\bibinitperiod}}}%
+      }
+      \strng{namehash}{557ca75c6a64c6628584f314120df93f}
+      \strng{fullhash}{557ca75c6a64c6628584f314120df93f}
+      \strng{fullhashraw}{557ca75c6a64c6628584f314120df93f}
+      \strng{bibnamehash}{557ca75c6a64c6628584f314120df93f}
+      \strng{authorbibnamehash}{557ca75c6a64c6628584f314120df93f}
+      \strng{authornamehash}{557ca75c6a64c6628584f314120df93f}
+      \strng{authorfullhash}{557ca75c6a64c6628584f314120df93f}
+      \strng{authorfullhashraw}{557ca75c6a64c6628584f314120df93f}
+      \field{sortinit}{C}
+      \field{sortinithash}{4d103a86280481745c9c897c925753c0}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://www.youtube.com/watch?v=QpyHYRBKy8U}}
+      \field{title}{AI learns to play PACMAN using NEAT}
+      \field{year}{2018}
+    \endentry
+    \entry{ThePacmanDossier}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=933e582d07df83763c176d95e5304e0a}{%
+           family={{Jamey Pittman}},
+           familyi={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{933e582d07df83763c176d95e5304e0a}
+      \strng{fullhash}{933e582d07df83763c176d95e5304e0a}
+      \strng{fullhashraw}{933e582d07df83763c176d95e5304e0a}
+      \strng{bibnamehash}{933e582d07df83763c176d95e5304e0a}
+      \strng{authorbibnamehash}{933e582d07df83763c176d95e5304e0a}
+      \strng{authornamehash}{933e582d07df83763c176d95e5304e0a}
+      \strng{authorfullhash}{933e582d07df83763c176d95e5304e0a}
+      \strng{authorfullhashraw}{933e582d07df83763c176d95e5304e0a}
+      \field{sortinit}{J}
+      \field{sortinithash}{b2f54a9081ace9966a7cb9413811edb4}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://pacman.holenet.info/}}
+      \field{title}{The Pac-Man Dossier}
+      \field{year}{2015}
+    \endentry
+    \entry{SnakeTutorial}{misc}{}{}
+      \name{author}{1}{}{%
+        {{hash=58516d2d53a36325ae840ba3c2290a0f}{%
+           family={Loeber},
+           familyi={L\bibinitperiod},
+           given={Patrick},
+           giveni={P\bibinitperiod}}}%
+      }
+      \strng{namehash}{58516d2d53a36325ae840ba3c2290a0f}
+      \strng{fullhash}{58516d2d53a36325ae840ba3c2290a0f}
+      \strng{fullhashraw}{58516d2d53a36325ae840ba3c2290a0f}
+      \strng{bibnamehash}{58516d2d53a36325ae840ba3c2290a0f}
+      \strng{authorbibnamehash}{58516d2d53a36325ae840ba3c2290a0f}
+      \strng{authornamehash}{58516d2d53a36325ae840ba3c2290a0f}
+      \strng{authorfullhash}{58516d2d53a36325ae840ba3c2290a0f}
+      \strng{authorfullhashraw}{58516d2d53a36325ae840ba3c2290a0f}
+      \field{sortinit}{L}
+      \field{sortinithash}{7c47d417cecb1f4bd38d1825c427a61a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{howpublished}{\url{https://youtube.com/playlist?list=PLqnslRFeH2UrDh7vUmJ60YrmWd64mTTKV&feature=shared}}
+      \field{title}{Teach AI To Play Snake - Reinforcement Learning Tutorial With PyTorch And Pygame}
+      \field{year}{2020}
+    \endentry
+    \entry{vanseijen2017hybridrewardarchitecturereinforcement}{misc}{}{}
+      \name{author}{6}{}{%
+        {{hash=dc578a6d9b7278d1023043751587db8a}{%
+           family={Seijen},
+           familyi={S\bibinitperiod},
+           given={Harm},
+           giveni={H\bibinitperiod},
+           prefix={van},
+           prefixi={v\bibinitperiod}}}%
+        {{hash=a7ce31ad6601db5d07af9b9af7d8fdc4}{%
+           family={Fatemi},
+           familyi={F\bibinitperiod},
+           given={Mehdi},
+           giveni={M\bibinitperiod}}}%
+        {{hash=d1ff652c6fcfdc31237cf919d2845207}{%
+           family={Romoff},
+           familyi={R\bibinitperiod},
+           given={Joshua},
+           giveni={J\bibinitperiod}}}%
+        {{hash=1be9519041d6b749d383b1c1215d638a}{%
+           family={Laroche},
+           familyi={L\bibinitperiod},
+           given={Romain},
+           giveni={R\bibinitperiod}}}%
+        {{hash=5db573efd22f9202da8d170f74012b74}{%
+           family={Barnes},
+           familyi={B\bibinitperiod},
+           given={Tavian},
+           giveni={T\bibinitperiod}}}%
+        {{hash=d3ae40a8f34801ee8a345dcc6a184cbb}{%
+           family={Tsang},
+           familyi={T\bibinitperiod},
+           given={Jeffrey},
+           giveni={J\bibinitperiod}}}%
+      }
+      \strng{namehash}{445713eedc162b18a8fdc6a74d70b42e}
+      \strng{fullhash}{45acbd23790bd3f42141f9c3b2d04b8d}
+      \strng{fullhashraw}{45acbd23790bd3f42141f9c3b2d04b8d}
+      \strng{bibnamehash}{445713eedc162b18a8fdc6a74d70b42e}
+      \strng{authorbibnamehash}{445713eedc162b18a8fdc6a74d70b42e}
+      \strng{authornamehash}{445713eedc162b18a8fdc6a74d70b42e}
+      \strng{authorfullhash}{45acbd23790bd3f42141f9c3b2d04b8d}
+      \strng{authorfullhashraw}{45acbd23790bd3f42141f9c3b2d04b8d}
+      \field{sortinit}{S}
+      \field{sortinithash}{b164b07b29984b41daf1e85279fbc5ab}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.LG}
+      \field{eprinttype}{arXiv}
+      \field{title}{Hybrid Reward Architecture for Reinforcement Learning}
+      \field{year}{2017}
+      \verb{eprint}
+      \verb 1706.04208
+      \endverb
+      \verb{urlraw}
+      \verb https://arxiv.org/abs/1706.04208
+      \endverb
+      \verb{url}
+      \verb https://arxiv.org/abs/1706.04208
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+

@@ -1,0 +1,220 @@
+
+\documentclass[12pt, draft]{report}
+
+% Pakiety
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage[obeyDraft]{todonotes}
+\usepackage{biblatex}
+\usepackage{graphicx}
+\usepackage{animate}
+\usepackage{amsmath}
+
+
+\graphicspath{{./img/}}
+\addbibresource{./bibtex.bib}
+
+% Metadane
+\title{
+    {Implementacja gry wykorzystującej uczenie przez wzmacnianie}\\
+    {\large Politechnika Warszawska, Wydział Elektryczny}\\
+    {Informatyka Stosowana}
+}
+\author{Łukasz Czajka}
+\date{\today}
+
+% Ustawienia dokumentu
+\setlength{\marginparwidth}{3cm}
+
+% Nowe polecenia
+\newcommand{\todoin}[1]{\todo[inline]{#1}}
+\newcommand{\img}[1]{\includegraphics[width=\textwidth]{#1}}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\listoftodos
+\chapter{Wstęp}
+\section{Cel projektu}
+Celem projektu indywidualnego było stworzenie gier wykorzystującej głębokie uczenie wraz z uczeniem przez wzmacnianie. Uzyskane przez AI wyniki następnie miały zostać porównane z wynikami uzyskanymi przez człowieka.
+
+\section{Wykorzystane biblioteki}
+Projekt został w Pythonie 3.13.7. Wykorzystane biblioteki zostały zamieszczone w pliku \texttt{requirements.txt}. 
+Do najważniejszych bibliotek należą:
+\begin{itemize}
+    \item TensorFlow - Biblioteka do uczenia maszynowego
+    \item Matplotlib - Biblioteka do tworzenia wykresów
+    \item Pygame - Biblioteka do tworzenia gier
+\end{itemize}
+
+\chapter{Część ogólna}
+\label{sec:ogolne}
+
+Na początku projektu poświęciłem czas na zaprojektowanie klas bazowych, które są wykorzystywane we wszystkich grach. Dzięki temu możliwe było zapewnienie spójności oraz łatwiejsze rozwijanie i utrzymanie kodu w kolejnych etapach pracy. Znajdują się katalogu \texttt{src/general}
+
+\section{Struktura projektu}
+
+Katalog \texttt{src} zawiera podkatalog \texttt{general}, który zawiera podstawowe klasy i funkcje, z których korzystają zaimplementowane gry.
+Zapewnia to ujednolicenie zachowań oraz ułatwia rozwijanie i utrzymanie kodu. 
+Przykładowe klasy znajdujące się w \texttt{general} to:
+\begin{itemize}
+    \item \texttt{AGameCore} - Odpowiedzialna za rysowanie, wykonywanie nowych ramek.
+    \item \texttt{APlayer} - Abstrakcyjna klasa gracza. Tworzy instancję GameCore, i pozwala na interakcję z nią. Implementowana przez Agentów AI oraz gracza.
+    \item \texttt{Drawable} - Interfejs dla obiektów, które mogą być rysowane na ekranie.
+    \item \texttt{AGameState} - Klasa reprezentująca stan gry. Zawiera informacje o aktualnym stanie gry, takie jak pozycje graczy, stan planszy itp. Pozwala na łatwe kopiowanie ważnych informacji.
+    \item \texttt{AGameStatsDisplay} - Klasa odpowiedzialna za wyświetlanie statystyk gry.
+\end{itemize}
+
+Część rzeczy zaimplementowanych w ramach tworzonych gier ostatecznie zostało przeniesione do katalogu \texttt{general}. Przykładem może być pakiet \texttt{maze}, który zawiera klasy związane z planszami. Nazwa jest pozostałością po Pac-Manie.
+
+Pozostałe katalogi zawarte w katalogu \texttt{src} to poszczególne gry, które zostały zaimplementowane w ramach projektu.
+
+\section{Struktura gier}
+
+
+Pakiety agentów znajdują się w katalogu \texttt{src/nazwa\_gry/agents/nazwa\_agenta}.
+Pakiet gry znajduje się w katalogu \texttt{src/nazwa\_gry}.
+
+Gry korzystające z mojego środowiska muszą zaimplementować klasy \\ \texttt{APlayer}, \texttt{AGameCore} oraz \texttt{AGameState}. \\
+Pakiety gier oraz pakiety agentów muszą udostępnić implementację klasy \texttt{APlayer} jako \texttt{Player}.
+
+
+\todo{Można dodać UMLa}
+
+\section{Skrypt uruchamiający}
+
+W celu wygodnego uruchamiania i interakcji z grami i modelami stworzyłem skrypt uruchamiający \texttt{start.py}. Pozwala on na uruchamianie gry w różnych trybach, wybór agenta, zapisywanie i wczytywanie modeli, a także na modyfikacje konfiguracji.
+\\
+\img{start_main_help}
+\\
+\img{start_launch_help}
+
+\chapter{Snake}
+
+Snake to pierwsza gra, którą zaimplementowałem w ramach projektu. W trakcie tworzenia gry wzorowałem się częściowo na tutorialu przez Patricka Loebera \cite{SnakeTutorial}.
+Jak wspomniałem w części, podszedłem do tworzenia gry w sposób bardziej obiektowy - najpierw zaprojektowałem i utworzyłem klasy bazowe, a następnie dla każdej gry implementuję je.
+
+Podczas implementacji gry Snake utworzyłem funkcje ułatwiające rysowanie obiektów i tekstu na ekranie, które następnie, w celu ułatwienia tworzenia kolejnych gier, przeniosłem do pakietu \texttt{general}.
+
+Kolizje z ogonem węża są wykrywane poprzez sprawdzenie, czy nowa pozycja głowy węża znajduje się w zbiorze pozycji zajmowanych przez ogon węża. \\
+Ponieważ w każdej chwili jest co najwyżej jeden owoc, w celu sprawdzenia kolizji z owocem wystarczy sprawdzić, czy nowa pozycja głowy węża jest równa pozycji owocu.
+
+\section{Model AI - DQN}
+
+
+\begin{figure}
+    \centering
+    \animategraphics[autoplay,loop,width=\textwidth]{5}{anim/asnake-}{1}{434}
+    \caption{AI grające w Snake'a}
+    \label{fig:snake_ai}
+\end{figure}
+
+\section{Wyniki}
+
+\begin{figure}
+    \centering
+    \img{snake_score}
+    \caption{Wyniki uzyskane przez AI podczas treningu na planszy 30x30}
+\end{figure}
+
+\section{Porównanie wyników uzyskanych przez \\ model AI z wynikami uzyskanymi przez człowieka}
+
+\chapter{Pac-Man}
+
+\section{Utworzenie gry}
+Korzystając z wcześniej utworzonych klas w katalogu \texttt{general} stworzyłem implementację Pac-Mana.
+W tym celu utworzyłem:
+\begin{itemize}
+    \item \texttt{Maze} odpowiedzialny za przechowywanie i rysowanie \\ obiektów na planszy.
+    \item \texttt{MazeObject} będący klasą bazową dla wszystkich obiektów na planszy.
+    \item \texttt{Actor} będący klasą bazową dla wszystkich obiektów poruszających się po planszy.
+    \item \texttt{MazeUtils} będący klasą pozwalającą na wykonywanie pozostałych operacji na labiryncie.
+    \item Rozwinięto możliwości rysowania na ekranie. Dodano system warstw, wprowadzono interfejs \texttt{Drawable}, dodano pozycje ciągłe.
+    \item System podpięć pod każdą ramkę pozwalający na aktualizacje obiektów.
+    \item Funkcję oznaczjącą klatki jako te, w których można podjąć decyzję.
+    \item System kolizji.
+    \item Możliwość wczytywania labiryntu z pliku.
+    \item Logikę dla każdego z duchów.
+    \item System transakcji. Pozwala on na korzystanie z tymczasowych atrybutów. Pozwala on na symulowanie następnego ruchu.
+    \item Rozwinięto system statystyk.
+\end{itemize}
+
+\section{Zasady gry}
+
+Podczas projektowania gry wzorowałem się na oryginalnej wersji Pac-Mana, korzystając z zasad opisanych w the Pac-Man Dossier \cite{ThePacmanDossier}.
+
+
+W celu uproszczenia gry wprowadziłem następujące modyfikacje:
+\begin{itemize}
+    \item Pac-Man ma tylko jedno życie.
+    \item Pac-Man nie może wykonywać tzw. Corneringu.
+    \item Brak bonusowych punktów.
+    \item Zmodyfikowany system punktacji.
+    \item Jest tylko jeden poziom.
+\end{itemize} 
+
+
+Wcześniejsze modyfikacje, jakie wprowadziłem, ale ostatecznie z nich zrezygnowałem to:
+\begin{itemize}
+    \item Skokowy ruch - Pac-Man i duchy poruszały się o jedną kratkę na turę.
+    \item Decyzje Pac-Mana podejmowane jedynie na skrzyżowaniu.
+    \item Brak możliwości zawracania Pac-Mana na skrzyżowaniu.
+\end{itemize}
+
+\section{Model AI - DQN}
+\subsection{Cechy}
+Na początku próbowałem przekazać informację o odwiedzaniu poszczególnych tuneli w grze wraz z pozycją absolutną obiektów. Ponieważ Pac-Man nie miał możliwości zawracania oraz miał tylko jedno życie, wszystkie odwiedzone krawędzie musiały być puste. 
+Miałem nadzieję, że model będzie w stanie się nauczyć układu ścieżek w grze. Takie rozwiązanie okazało się nieefektywne - Spadek wartości $\epsilon$ wiązał się z spadkiem uzyskiwanego wyniku.
+
+Bardziej efektywnym rozwiązaniem okazało się przekazywanie do modelu odwrotności najkrótszej odległości dla każdego możliwego kierunku, czyli wartości w postaci $\frac{1}{\text{odległość}}$. Dzięki temu wszystkie dane mieściły się w przedziale [0,1]. Taką metodę nawigacji zastosowałem również w przypadku pozycji duchów, skrzyżowań, oraz energizerów.
+Zdecydowałem również, że nie warto kodować odległości od każdego ducha indywidualnie, lecz wystarczy odległość od najbliższego ducha w każdym kierunku.
+Biorąc pod uwagę fakt, że duch może zawracać jedynie w wyjątkowych przypadkach wykorzystuje 2 nawigacje do ducha - Bez uwzględnienia możliwości zawrotu ducha oraz z możliwością zawrotu ducha.
+Pozostałe cechy to:
+
+\begin{itemize}
+    \item Czas do zmiany stanu
+    \item Pozostały czas działania energizera
+    \item Ilość dostępnych energizerów
+    \item Stan globalny duchów - Czy w trybie pościgu? Czy w trybie rozproszenia?
+\end{itemize}
+
+\todo{Napisać że zmieniłem cechy}
+\subsection{Trenowanie}
+Ponieważ Pac-Man to skomplikowana gra, wzorując się na przykładzie CodeBullet\cite{CBPacman}, zdecydowałem się podzielić proces trenowania na kilka etapów.
+
+\subsubsection{Nawigacja labiryntu}
+Celem tego etapu było nauczenie Pac-Mana poruszania się po labiryncie i zbierania punktów.
+
+Trenowałem Pac-Mana na klasycznym labiryncie, z wyłączonym spawnem duchów. Za zbliżenie się do punktów/jedzenia dodawany był mały bonus, a w przypadku oddalenia się - kara. Dodatkowo wprowadzona była kara za każdą wykonaną turę, aby zachęcić Pac-Mana do szybszego poruszania się po planszy.
+
+Aby zabezpieczyć się przed utknięciem w pętli, dodałem głód - Jeżeli Pac-Man nie będzie się zbliżał do jedzenia przez określoną ilość tur, następuję śmierć.
+\todo{Dodać gif pokazujący działanie}
+
+\subsubsection{Unikanie i zjadanie duchów}
+Celem tego etapu było nauczenie Pac-Mana unikania i jedzenia duchów. Aby to zrobić utworzyłem mnieszy labirynt, w którym duch byłby zmuszony do jedzenia punktów oraz jednoczęsnie unikania blinky'ego. 
+Pozycje gracza i ducha były losowe. W środku labiryntu znajdował się energizer pozwalający na zjedznie ducha. \\
+W celu ułatwienia uczenia zmniejszyłem prędkość duchów oraz zwiększyłem prędkość Pac-Mana. Zachowałem dodane wymagania z poprzedniego etapu.
+Model był w stanie poprawiać swój wynik przez pewien czas.
+
+\subsubsection{Pełna gra}
+Ostatnim etapem było trenowanie Pac-Mana na pełnej planszy z większością zasad z oryginalnej gry. Prędkości aktorów zostały ustawione na domyślne dla poziomu 1.
+Podobnie jak wyżej zachowałem wymagania z poprzednich etapów.
+Model był w stanie poprawiać swój wynik przez pewien czas.
+
+\subsection{Wyniki}
+
+\subsection{Wnioski}
+Dynamiczność Pac-Mana sprawiwa, że jest to trudna gra do nauczenia się przez model. Wymaga ona od modelu umiejętności długoterminowego planowania, a także umieętności przewidywania ruchów duchów.
+Przygotowanie dobrego modelu wymagałoby dużej ilości eksperymentów z cechami, architekturą sieci oraz parametrami trenowania.
+
+\subsection{Pomysły na poprawę jakości modelu}
+\begin{itemize}
+    \item Wykorzystanie Hybrid Reward Architecture \cite{vanseijen2017hybridrewardarchitecturereinforcement}. Architektura ta została zaprezentowana na Pac-Manie, gdzie uzyskała ona nadludzkie wyniki. \\ Mimo efektywności nie jest ona popularna, ponieważ wymaga zaimplemenotwania modeli dla każdego obiektu (punkty,duchy,gracze).
+    \item Wykorzystanie CNN - Konwolucyjne sieci neuronowe są często wykorzystywane w grach, gdzie stan gry może być reprezentowany jako obraz. W przypadku Pac-Mana można by wykorzystać mapę gry jako wejście do CNN, co pozwoliłoby modelowi na lepsze zrozumienie przestrzennej struktury gry. Zrezygnowałem z powodu zbyt dużego czasu trenowania.
+    \item Wykorzystanie DQN wraz z siecią polityki oraz siecią celem. Jest ona stabilniejszą wersją DQN.
+\end{itemize}
+
+\printbibliography
+
+\end{document}
