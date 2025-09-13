@@ -237,7 +237,7 @@ class Player(APlayer):
         walls = []
         for i in range(4):
             dir = self._directions[i]
-            relative_to_origin = dir.remove_rotation(origin_dir)
+            relative_to_origin = dir.add_rotation(origin_dir)
             pos = maze.shift_position(position, relative_to_origin)
             walls.append(int(maze.check_wall(pos)))
         return walls
