@@ -23,11 +23,9 @@ class Pacman(Actor):
         
         if level == 1:
             return Decimal('1')
+        elif 2 <= level <= 4:
             if self.is_frightened: return Decimal('0.9')
             else: return Decimal('0.8')
-        elif 2 <= level <= 4:
-            if self.is_frightened: return Decimal('0.95')
-            else: return Decimal('0.9')
         elif 5 <= level <= 20:
             if self.is_frightened: return Decimal('1')
             else: return Decimal('1')

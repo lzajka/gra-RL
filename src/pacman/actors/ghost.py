@@ -108,9 +108,9 @@ class Ghost(Actor, Collidable):
             elif self.is_tunneling: return Decimal('0.4')
             else: return Decimal('0.75')
         elif 2 <= level <= 4:
-            if self.is_frightened: return Decimal('0.55')
-            elif self.is_tunneling: return Decimal('0.45')
-            else: return Decimal('0.85')
+            if self.is_frightened: return Decimal('0.50')
+            elif self.is_tunneling: return Decimal('0.4')
+            else: return Decimal('0.75')
         elif 5 <= level <= 20:
             if self.is_frightened: return Decimal('0.60')
             elif self.is_tunneling: return Decimal('0.50')
