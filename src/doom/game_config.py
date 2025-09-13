@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-from dataclasses import dataclass
+import vizdoom as vd
 
-@dataclass
 class GameConfig:
-    SCENARIO = 'basic.cfg'
+    SCENARIO = 'deathmatch.cfg'
+    ARGS = None
+    RES = None
+    MODE = None

@@ -11,13 +11,13 @@ class GameState(AGameState):
     """
     def __init__(self, state : vd.GameState = None):
         super().__init__()
+        from .game_core import GameCore
+        self.is_game_over = GameCore.main_instance.is_game_over
         if state == None:
             return
         vars = state.game_variables
         self.score = vars[0]
         #self.labels : List[vd.Label] = state.labels
-        self.frame = state.number
-
 
     def get_headers(self):
         return []
@@ -29,5 +29,4 @@ class GameState(AGameState):
         s = GameState()
         s.score = self.score
         #s.labels = self.labels.copy()
-        s.frame = self.frame
         return s
